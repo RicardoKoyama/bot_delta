@@ -50,6 +50,28 @@ db.serialize(() => {
       data TEXT
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS contas_whatsapp (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT,
+      numero TEXT,
+      status TEXT,
+      updated_at TEXT
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone_number TEXT,
+      termo TEXT,
+      resposta TEXT,
+      data TEXT
+    )
+  `);
+
+
 });
 
 module.exports = db;

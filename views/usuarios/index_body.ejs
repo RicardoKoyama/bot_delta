@@ -1,0 +1,35 @@
+<h1>Usuários Autorizados</h1>
+
+<a href="/usuarios/novo">➕ Novo usuário</a>
+
+<table border="1" cellpadding="8" cellspacing="0">
+  <tr>
+    <th>ID</th>
+    <th>Nome</th>
+    <th>Telefone</th>
+    <th>Validade</th>
+    <th>Ativo</th>
+    <th>Ações</th>
+  </tr>
+
+  <% usuarios.forEach(u => { %>
+    <tr>
+      <td><%= u.id %></td>
+      <td><%= u.nome %></td>
+      <td><%= u.phone_number %></td>
+      <td><%= u.validade %></td>
+      <td>
+        <% if (u.is_active) { %>
+          <span style="color:green;font-weight:bold">ATIVO</span>
+        <% } else { %>
+          <span style="color:red;font-weight:bold">INATIVO</span>
+        <% } %>
+      </td>
+      <td>
+        <a href="/usuarios/editar/<%= u.id %>">✏ Editar</a> |
+        <a href="/usuarios/excluir/<%= u.id %>"
+           onclick="return confirm('Excluir este usuário?')">🗑 Excluir</a>
+      </td>
+    </tr>
+  <% }) %>
+</table>

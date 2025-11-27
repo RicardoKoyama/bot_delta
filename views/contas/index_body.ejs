@@ -1,0 +1,41 @@
+<h1>Contas WhatsApp</h1>
+
+<a href="/contas/nova">➕ Adicionar nova conta</a>
+
+<table border="1" cellpadding="8" cellspacing="0">
+  <tr>
+    <th>ID</th>
+    <th>Nome</th>
+    <th>Número</th>
+    <th>Status</th>
+    <th>Atualizado</th>
+    <th>Ações</th>
+  </tr>
+
+  <% contas.forEach(c => { %>
+    <tr>
+      <td><%= c.id %></td>
+      <td><%= c.nome %></td>
+      <td><%= c.numero %></td>
+      <td>
+        <% if (c.status === 'ativo') { %>
+          <span style="color:green;font-weight:bold">ATIVO</span>
+        <% } else if (c.status === 'pendente') { %>
+          <span style="color:orange;font-weight:bold">PENDENTE</span>
+        <% } else { %>
+          <span style="color:red;font-weight:bold">DESCONECTADO</span>
+        <% } %>
+      </td>
+      <td><%= c.updated_at %></td>
+
+      <td>
+        <a href="/contas/editar/<%= c.id %>">✏ Editar</a> |
+        <a href="/contas/excluir/<%= c.id %>"
+           onclick="return confirm('Excluir conta?')">🗑 Excluir</a> |
+        <a href="/contas/qrcode/<%= c.id %>">📱 QR</a> |
+        <a href="/contas/restart/<%= c.id %>">↻ Reiniciar</a>
+      </td>
+    </tr>
+  <% }) %>
+
+</table>

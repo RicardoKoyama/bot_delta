@@ -1,0 +1,42 @@
+<h1>Produtos Delta</h1>
+
+<form method="GET" action="/produtos">
+  <input type="text" name="busca" placeholder="Buscar nome ou referência"
+         value="<%= busca %>" style="width:250px" />
+  <button type="submit">Buscar</button>
+  <a href="/produtos">Limpar</a>
+</form>
+
+<br/>
+
+<a href="/produtos/exportar">⬇ Exportar CSV</a>
+
+<br/><br/>
+
+<table border="1" cellpadding="8" cellspacing="0">
+  <tr>
+    <th>Imagem</th>
+    <th>Referência</th>
+    <th>Nome</th>
+    <th>Estoque</th>
+    <th>ID Site</th>
+  </tr>
+
+  <% produtos.forEach(p => { %>
+    <tr>
+      <td>
+        <% if (p.img_url) { %>
+          <img src="<%= p.img_url %>" width="80"/>
+        <% } else { %>
+          -
+        <% } %>
+      </td>
+
+      <td><%= p.cod_produto %></td>
+      <td><%= p.nome_abreviado %></td>
+      <td><%= p.estoque %></td>
+      <td><%= p.id_site %></td>
+    </tr>
+  <% }) %>
+
+</table>

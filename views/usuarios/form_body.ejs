@@ -1,0 +1,24 @@
+<h1><%= usuario ? "Editar Usuário" : "Novo Usuário" %></h1>
+
+<form method="POST" action="/usuarios/salvar">
+  
+  <% if (usuario) { %>
+    <input type="hidden" name="id" value="<%= usuario.id %>">
+  <% } %>
+
+  <label>Nome:</label><br/>
+  <input type="text" name="nome" value="<%= usuario ? usuario.nome : '' %>" required><br/><br/>
+
+  <label>Telefone (somente números):</label><br/>
+  <input type="text" name="phone_number" value="<%= usuario ? usuario.phone_number : '' %>" required><br/><br/>
+
+  <label>Validade:</label><br/>
+  <input type="date" name="validade" value="<%= usuario ? usuario.validade : '' %>" required><br/><br/>
+
+  <label>Ativo?</label>
+  <input type="checkbox" name="is_active" <%= usuario && usuario.is_active ? 'checked' : '' %>><br/><br/>
+
+  <button type="submit">Salvar</button>
+  <a href="/usuarios">Cancelar</a>
+
+</form>
