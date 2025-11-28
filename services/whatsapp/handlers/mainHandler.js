@@ -18,6 +18,7 @@ module.exports = async function mainHandler(client, msg) {
 
   // 2 — Identificar tipo da mensagem
   if (type === "chat") {
+    console.log('Mensagem recebida');
     return textoHandler(client, msg, body, usuario);
   }
 
