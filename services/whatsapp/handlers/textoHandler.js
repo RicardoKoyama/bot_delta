@@ -23,27 +23,26 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     async function buscarPorReferencia(client, msg, ref) {
         console.log("🔎 Buscando por referência:", ref);
 
-        // Normaliza: remove espaços e deixa maiúsculo
         ref = ref.trim().toUpperCase();
 
-        // Se a referência não tem "-X", adiciona "-A"
+        // Se não tem -, adiciona -A
         if (!ref.includes('-')) {
             ref = ref + "-A";
         }
 
-        // Busca por código EXATO primeiro
+        // 1 — Tenta exata
         let row = await sqlGet(`
             SELECT * FROM produtos_delta 
             WHERE cod_produto = ?
         `, [ref]);
 
-        // Se não existiu exato, tenta ignorar o final (usar apenas o número)
+        // 2 — Se não achou, tenta pela base
         if (!row) {
             const base = ref.split('-')[0];
             row = await sqlGet(`
                 SELECT * FROM produtos_delta 
-                WHERE cod_produto ilike ?
-            `, [base]);
+                WHERE cod_produto LIKE ?
+            `, [`${base}-%`]);
         }
 
         if (!row) {
@@ -52,6 +51,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         return responderProduto(client, msg, row);
     }
+
 
 
     async function buscarPorEAN(client, msg, ean) {
@@ -164,6 +164,12 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     return buscarPorEAN(client, msg, termo);
   }
 
+  // 3.5 — Apenas número (ex: "2201") → tratar como referência
+  if (/^\d{3,5}$/.test(termo)) {
+    return buscarPorReferencia(client, msg, termo);
+  }
+
   // 4 — Busca por NOME no SQLite
   return buscarPorNome(client, msg, termo);
+
 };
