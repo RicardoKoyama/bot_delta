@@ -42,7 +42,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             const base = ref.split('-')[0];
             row = await sqlGet(`
                 SELECT * FROM produtos_delta 
-                WHERE cod_base = ?
+                WHERE cod_produto ilike ?
             `, [base]);
         }
 
