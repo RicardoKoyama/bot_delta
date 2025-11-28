@@ -61,6 +61,18 @@ async function createClient(conta) {
     client.initialize(); // tenta reconectar automaticamente
   });
 
+  client.on('message', async msg => {
+    console.log("🔥 DISPAROU O EVENTO DE MENSAGEM!");
+    try {
+      const mainHandler = require('./handlers/mainHandler');
+      await mainHandler(client, msg);
+    } catch (err) {
+      console.error("Erro no handler:", err);
+    }
+  });
+
+
+
   return client;
 }
 

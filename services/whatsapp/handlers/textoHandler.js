@@ -40,7 +40,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         const row = await sqlGet(`
             SELECT * FROM produtos_delta 
-            WHERE ean = ?
+            WHERE it_cbarra = ?
         `, [ean]);
 
         if (!row) {
