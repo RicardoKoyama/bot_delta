@@ -23,10 +23,28 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     async function buscarPorReferencia(client, msg, ref) {
         console.log("🔎 Buscando por referência:", ref);
 
-        const row = await sqlGet(`
+        // Normaliza: remove espaços e deixa maiúsculo
+        ref = ref.trim().toUpperCase();
+
+        // Se a referência não tem "-X", adiciona "-A"
+        if (!ref.includes('-')) {
+            ref = ref + "-A";
+        }
+
+        // Busca por código EXATO primeiro
+        let row = await sqlGet(`
             SELECT * FROM produtos_delta 
             WHERE cod_produto = ?
         `, [ref]);
+
+        // Se não existiu exato, tenta ignorar o final (usar apenas o número)
+        if (!row) {
+            const base = ref.split('-')[0];
+            row = await sqlGet(`
+                SELECT * FROM produtos_delta 
+                WHERE cod_base = ?
+            `, [base]);
+        }
 
         if (!row) {
             return msg.reply("❌ Referência não encontrada.");
@@ -34,6 +52,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         return responderProduto(client, msg, row);
     }
+
 
     async function buscarPorEAN(client, msg, ean) {
         console.log("🔎 Buscando por EAN:", ean);
