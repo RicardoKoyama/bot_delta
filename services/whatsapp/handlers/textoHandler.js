@@ -78,30 +78,35 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
         try {
             const det = await deltaApi.detalhes(row.cod_produto);
 
+            // Monta legenda
             let texto = `📌 *${det.dsc_abreviado}*\n\n`;
-            texto += `📦 Código: ${det.cod_produto}\n`;
-            texto += `📏 Tamanho: ${det.dsc_tamanho_produtos}\n`;
-            texto += `🎨 Superfície: ${det.dsc_esp_superficie}\n`;
-            texto += `🧱 Marca: ${det.dsc_marca}\n`;
-            texto += `📦 Estoque: *${det.sdo_saldo_estoque}*\n`;
-            texto += `📦 m² por Caixa: ${det.prd_m2_caixa}\n\n`;
+            texto += `📦 *Código:* ${det.cod_produto}\n`;
+            texto += `📏 *Tamanho:* ${det.dsc_tamanho_produtos}\n`;
+            texto += `🎨 *Superfície:* ${det.dsc_esp_superficie}\n`;
+            texto += `🧱 *Marca:* ${det.dsc_marca}\n`;
+            texto += `📦 *Estoque:* ${det.sdo_saldo_estoque}\n`;
+            texto += `📦 *m² por Caixa:* ${det.prd_m2_caixa}\n\n`;
             texto += `🔗 ${det.prd_link_produto}`;
 
-            // Envia imagem
             try {
-            const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
-            await client.sendMessage(msg.from, media);
-            } catch (imgErr) {
-            console.log("Erro ao carregar imagem:", imgErr.message);
-            }
+                const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
 
-            return msg.reply(texto);
+                // Envia imagem + legenda juntos
+                await client.sendMessage(msg.from, media, {
+                    caption: texto
+                });
+
+            } catch (imgErr) {
+                console.log("Erro ao carregar imagem:", imgErr.message);
+                return msg.reply(texto); // fallback
+            }
 
         } catch (e) {
             console.error("Erro na API Delta:", e.message);
             return msg.reply("❌ Erro ao consultar produto na API.");
         }
     }
+
 
     function sqlGet(sql, params) {
         return new Promise(resolve => {
