@@ -67,7 +67,13 @@ module.exports = async function imagemHandler(client, msg, usuario) {
 function decodeQR(filepath) {
     return new Promise((resolve) => {
         try {
-            const cmd = `./inlite/bin/inlite decode "${filepath}" --json`;
+            const path = require("path");
+            const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
+
+            const cmd = `${INLITE} decode "${filepath}" --json`;
+
+            console.log("Executando CLI:", cmd);
+
             const result = child_process.execSync(cmd).toString();
 
             const json = JSON.parse(result);
