@@ -1,43 +1,73 @@
 const db = require('../db/db');
 const { listaCompleta, detalhes } = require('./deltaApi');
 
+function getProdutosExistentes() {
+  return new Promise(resolve => {
+    db.all("SELECT cod_produto FROM produtos_delta", (err, rows) => {
+      if (err) return resolve([]);
+      resolve(rows.map(r => r.cod_produto));
+    });
+  });
+}
+
+function salvarBasicos(item) {
+  db.run(`
+    INSERT OR REPLACE INTO produtos_delta (
+      cod_produto, cod_base, nome, nome_abreviado, ean,
+      prd_referencia, tamanho, marca, superficie, m2_caixa,
+      cx_pallet, m2_pallet, peso_caixa, peso_pallet,
+      fora_linha, url_produto, id_site, img_url, ultima_atualizacao
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `,
+  [
+    item.cod_produto,
+    item.cod_produto.split('-')[0],
+    item.dsc_item,
+    item.dsc_abreviado,
+    item.it_cbarra,
+    item.prd_referencia || null,
+    item.dsc_tamanho_produtos || null,
+    item.dsc_marca || null,
+    item.dsc_esp_superficie || null,
+    item.prd_m2_caixa || null,
+    item.prd_cx_pallet || null,
+    item.prd_m2_pallet || null,
+    item.it_peso_bru || null,
+    item.peso_caixa || null,
+    item.it_fora_linha ? 1 : 0,
+    item.prd_link_produto || null,
+    item.id_site || null,
+    item.prd_link_img_produto || null
+  ]);
+}
+
 async function sincronizarLista() {
-  console.log("🔄 Carregando lista completa da DELTA...");
+  console.log("🔄 Sincronizando LISTA da Delta...");
 
   const lista = await listaCompleta();
-  console.log(`✔ Lista carregada: ${lista.length} produtos`);
+  const existentes = await getProdutosExistentes();
 
-  // Aqui, se quiser, já grava algo simples (cod_produto, nome) no banco:
   for (const item of lista) {
-    db.run(`
-      INSERT OR REPLACE INTO produtos_delta (
-        cod_produto, cod_base, nome, nome_abreviado, estoque, ean, ultima_atualizacao
-      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-    `,
-    [
-      item.cod_produto,
-      item.cod_produto.split('-')[0],
-      item.dsc_item,
-      item.dsc_abreviado,
-      item.sdo_saldo_estoque,
-      item.it_cbarra
-    ]);
+    salvarBasicos(item);
   }
 
-  console.log("🎉 Sincronização da LISTA básica concluída!");
-  return lista; // se quiser reutilizar depois
+  console.log(`✔ Lista atualizada: ${lista.length} itens.`);
+  return lista;
 }
 
 async function sincronizarDetalhes() {
-  console.log("🔄 Carregando DETALHES por produto...");
+  console.log("🔄 Buscando detalhes APENAS dos novos itens...");
 
   const lista = await listaCompleta();
-  console.log(`✔ Lista carregada: ${lista.length} produtos`);
+  const existentes = await getProdutosExistentes();
 
-  for (const item of lista) {
+  const novos = lista.filter(p => !existentes.includes(p.cod_produto));
+
+  console.log(`➕ Encontrados ${novos.length} novos itens.`);
+
+  for (const item of novos) {
     const cod = item.cod_produto;
-
-    await new Promise(resolve => setTimeout(resolve, 300)); // delay
 
     try {
       const det = await detalhes(cod);
@@ -49,46 +79,22 @@ async function sincronizarDetalhes() {
         if (match) id_site = match[1];
       }
 
-      db.run(`
-        INSERT OR REPLACE INTO produtos_delta (
-          cod_produto, cod_base, prd_referencia,
-          nome, nome_abreviado, ean, estoque,
-          tamanho, marca, superficie, m2_caixa,
-          cx_pallet, m2_pallet, peso_caixa,
-          peso_pallet, fora_linha, url_produto,
-          id_site, img_url, ultima_atualizacao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `,
-      [
-        det.cod_produto,
-        det.cod_produto.split('-')[0],
-        det.prd_referencia,
-        det.dsc_item,
-        det.dsc_abreviado,
-        det.it_cbarra,
-        det.sdo_saldo_estoque,
-        det.dsc_tamanho_produtos,
-        det.dsc_marca,
-        det.dsc_esp_superficie,
-        det.prd_m2_caixa,
-        det.prd_cx_pallet,
-        det.prd_m2_pallet,
-        det.it_peso_bru,
-        det.peso_caixa,
-        det.it_fora_linha ? 1 : 0,
-        det.prd_link_produto,
+      salvarBasicos({
+        ...det,
         id_site,
-        det.prd_link_img_produto
-      ]);
+        img_url: det.prd_link_img_produto
+      });
 
-      console.log(`✔ Detalhes de ${cod} atualizados`);
+      console.log(`✔ Detalhes de ${cod} sincronizados.`);
+
+      await new Promise(r => setTimeout(r, 300));
 
     } catch (e) {
-      console.log(`❌ Falha ao sincronizar detalhes de ${cod}: ${e.message}`);
+      console.log(`❌ Falha em ${cod}: ${e.message}`);
     }
   }
 
-  console.log("🎉 Sincronização de DETALHES concluída!");
+  console.log("🎉 Detalhes concluídos!");
 }
 
 module.exports = {

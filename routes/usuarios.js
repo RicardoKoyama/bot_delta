@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ensureAuth = require('../middlewares/auth');
 const db = require('../db/db');
+const { getClient } = require("../services/whatsapp/whatsappClient");
 
 // LISTAGEM
 router.get('/', ensureAuth, (req, res) => {
@@ -21,19 +22,57 @@ router.post('/salvar', ensureAuth, (req, res) => {
 
   const ativo = is_active === 'on' ? 1 : 0;
 
+  // ------------------------------
+  //  NOVO USUÁRIO → ENVIA BOAS-VINDAS
+  // ------------------------------
   if (!id) {
-    // INSERT
     db.run(
       `INSERT INTO usuarios (nome, phone_number, validade, is_active)
        VALUES (?, ?, ?, ?)`,
       [nome, phone_number, validade, ativo],
-      (err) => {
-        if (err) console.error(err);
-        res.redirect('/usuarios');
+      async (err) => {
+        if (err) {
+          console.error(err);
+          return res.redirect('/usuarios');
+        }
+
+        try {
+          // Formata número
+          const numero = phone_number.replace(/\D/g, "");
+          const wa = getClient("BOT_1");
+
+          const mensagem = 
+`👋 *Bem-vindo ao BOT da Koyama Tecnologia!*
+
+Aqui você pode consultar produtos Delta de forma rápida e simples.
+
+Comandos disponíveis:
+• *cg <texto>* — busca por nome/descrição
+• *cg 1234* — busca por código
+• Envie *foto com QR Code* — consulta automática
+
+Se precisar de ajuda, envie:
+*ajuda*`;
+
+          if (wa && numero.length >= 10) {
+            await wa.sendMessage(`55${numero}@c.us`, mensagem);
+            console.log(`📩 Mensagem de boas-vindas enviada para ${numero}`);
+          } else {
+            console.log("⚠️ Cliente WhatsApp não disponível ou telefone inválido.");
+          }
+        } catch (e) {
+          console.error("❌ Erro ao enviar boas-vindas:", e);
+        }
+
+        return res.redirect('/usuarios');
       }
     );
-  } else {
-    // UPDATE
+  } 
+  
+  // ------------------------------
+  //  UPDATE → NÃO MANDA MENSAGEM
+  // ------------------------------
+  else {
     db.run(
       `UPDATE usuarios
        SET nome=?, phone_number=?, validade=?, is_active=?
