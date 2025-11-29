@@ -63,45 +63,48 @@ module.exports = async function imagemHandler(client, msg, usuario) {
     }
 };
 
-
 function decodeQR(filepath) {
     return new Promise((resolve) => {
         try {
             const path = require("path");
             const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
 
-            // 👇 Sem -json / --json
-            const cmd = `${INLITE} decode "${filepath}"`;
+            // 👇 Apenas o arquivo como argumento
+            const cmd = `${INLITE} "${filepath}"`;
 
             console.log("Executando CLI:", cmd);
 
             const result = child_process.execSync(cmd).toString();
             console.log("🔎 Saída do BarcodeReaderCLI:\n", result);
 
-            // 1) Tenta achar uma URL (caso o QR seja um link)
-            const urlMatch = result.match(/https?:\/\/\S+/i);
-            if (urlMatch) {
-                return resolve(urlMatch[0]);
+            // tentar decodificar JSON completo
+            try {
+                const json = JSON.parse(result);
+
+                if (json?.sessions?.length > 0 &&
+                    json.sessions[0]?.barcodes?.length > 0) {
+                    
+                    const barcode = json.sessions[0].barcodes[0];
+                    console.log("📦 Barcode JSON:", barcode);
+
+                    if (barcode?.text) {
+                        return resolve(barcode.text);
+                    }
+                }
+            } catch (e) {
+                console.log("⚠️ Não era JSON padrão, tentando parsing manual...");
             }
 
-            // 2) Tenta achar diretamente padrão id=123456 na saída
-            const idMatch = result.match(/id=(\d+)/i);
-            if (idMatch) {
-                return resolve(idMatch[0]); // aqui devolve "id=123", o extrairIdDoQR pega o número
-            }
-
-            // 3) Último fallback: pega a última linha não vazia como texto do código
+            // fallback — extrair texto cru
             const linhas = result
-                .split('\n')
+                .split("\n")
                 .map(l => l.trim())
                 .filter(l => l.length > 0);
 
             if (linhas.length > 0) {
-                const ultimaLinha = linhas[linhas.length - 1];
-                return resolve(ultimaLinha);
+                return resolve(linhas[linhas.length - 1]);
             }
 
-            // nada encontrado
             resolve(null);
 
         } catch (err) {
