@@ -16,30 +16,34 @@ router.get('/novo', ensureAuth, (req, res) => {
   res.render('usuarios/form', { usuario: null });
 });
 
-// SALVAR (NOVO + EDICAO)
+
 router.post('/salvar', ensureAuth, (req, res) => {
   const { id, nome, phone_number, validade, is_active } = req.body;
 
   const ativo = is_active === 'on' ? 1 : 0;
 
-  // ------------------------------
-  //  NOVO USUÁRIO → ENVIA BOAS-VINDAS
-  // ------------------------------
+  // 🔧 Normalizar telefone: manter sempre 55 + DDD + número
+  let numero = (phone_number || '').replace(/\D/g, '');
+  if (!numero.startsWith('55')) {
+    numero = '55' + numero;
+  }
+
   if (!id) {
+    // INSERT
     db.run(
       `INSERT INTO usuarios (nome, phone_number, validade, is_active)
        VALUES (?, ?, ?, ?)`,
-      [nome, phone_number, validade, ativo],
+      [nome, numero, validade, ativo],
       async (err) => {
         if (err) {
           console.error(err);
           return res.redirect('/usuarios');
         }
 
+        // 🔥 Envio da mensagem de boas-vindas
         try {
-          // Formata número
-          const numero = phone_number.replace(/\D/g, "");
-          const wa =  whatsappManager.getClientByName("BOT_1");
+          const whatsappManager = require("../services/whatsapp/WhatsAppManager");
+          const wa = whatsappManager.getClientByName("BOT_1");
 
           const mensagem = 
 `*Bem-vindo ao BOT da Koyama Tecnologia!*
@@ -51,11 +55,11 @@ Meios de consulta disponíveis:
 • *1234* — Busca pelo código 
 • Envie *foto do QR Code do mostruário* — Consulta automática`;
 
-          if (wa && numero.length >= 10) {
-            await wa.sendMessage(`55${numero}@c.us`, mensagem);
-            console.log(`📩 Mensagem de boas-vindas enviada para ${numero}`);
+          if (wa) {
+            await wa.sendMessage(`${numero}@c.us`, mensagem);
+            console.log(`📩 Boas-vindas enviada para ${numero}`);
           } else {
-            console.log("⚠️ Cliente WhatsApp não disponível ou telefone inválido.");
+            console.log("⚠️ Cliente WhatsApp não disponível.");
           }
         } catch (e) {
           console.error("❌ Erro ao enviar boas-vindas:", e);
@@ -64,17 +68,13 @@ Meios de consulta disponíveis:
         return res.redirect('/usuarios');
       }
     );
-  } 
-  
-  // ------------------------------
-  //  UPDATE → NÃO MANDA MENSAGEM
-  // ------------------------------
-  else {
+  } else {
+    // UPDATE
     db.run(
       `UPDATE usuarios
        SET nome=?, phone_number=?, validade=?, is_active=?
        WHERE id=?`,
-      [nome, phone_number, validade, ativo, id],
+      [nome, numero, validade, ativo, id],
       (err) => {
         if (err) console.error(err);
         res.redirect('/usuarios');
