@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ensureAuth = require('../middlewares/auth');
 const db = require('../db/db');
-const { getClient } = require("../services/whatsapp/whatsappClient");
+const whatsappManager = require("../services/whatsapp/WhatsAppManager");
 
 // LISTAGEM
 router.get('/', ensureAuth, (req, res) => {
@@ -39,7 +39,7 @@ router.post('/salvar', ensureAuth, (req, res) => {
         try {
           // Formata número
           const numero = phone_number.replace(/\D/g, "");
-          const wa = getClient("BOT_1");
+          const wa =  whatsappManager.getClientByName("BOT_1");
 
           const mensagem = 
 `👋 *Bem-vindo ao BOT da Koyama Tecnologia!*
