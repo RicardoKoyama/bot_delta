@@ -23,7 +23,6 @@ async function createClient(conta) {
     })
   });
 
-  // Evento QR → salvar no DB
   client.on('qr', async qr => {
     const qrBase64 = await qrcode.toDataURL(qr);
     db.run(
@@ -33,7 +32,6 @@ async function createClient(conta) {
     console.log(`📱 QR gerado para conta ${conta.nome}`);
   });
 
-  // Quando conectar
   client.on('ready', () => {
     console.log(`🟢 Conta ${conta.nome} conectada`);
     db.run(
@@ -42,7 +40,6 @@ async function createClient(conta) {
     );
   });
 
-  // Erro de autenticação
   client.on('auth_failure', msg => {
     console.log(`❌ Falha na conta ${conta.nome}: ${msg}`);
     db.run(
@@ -51,18 +48,16 @@ async function createClient(conta) {
     );
   });
 
-  // Desconectou
   client.on('disconnected', reason => {
     console.log(`🔴 Conta ${conta.nome} desconectada: ${reason}`);
     db.run(
       "UPDATE contas_whatsapp SET status='desconectado', updated_at=datetime('now') WHERE id=?",
       [conta.id]
     );
-    client.initialize(); // tenta reconectar automaticamente
+    client.initialize();
   });
 
   client.on('message', async msg => {
-    console.log("🔥 DISPAROU O EVENTO DE MENSAGEM!");
     try {
       const mainHandler = require('./handlers/mainHandler');
       await mainHandler(client, msg);

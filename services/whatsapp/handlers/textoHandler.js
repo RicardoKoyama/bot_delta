@@ -99,13 +99,13 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
             // Monta legenda
             let texto = `📌 *${det.dsc_abreviado}*\n\n`;
-            texto += `📦 *Código:* ${det.cod_produto}\n`;
-            texto += `📏 *Tamanho:* ${det.dsc_tamanho_produtos}\n`;
-            texto += `🎨 *Superfície:* ${det.dsc_esp_superficie}\n`;
-            texto += `🧱 *Marca:* ${det.dsc_marca}\n`;
-            texto += `📦 *Estoque:* ${det.sdo_saldo_estoque}\n`;
-            texto += `📦 *m² por Caixa:* ${det.prd_m2_caixa}\n\n`;
-            texto += `🔗 ${det.prd_link_produto}`;
+            texto += `*Referência:* ${det.cod_produto}\n`;
+            texto += `*Tamanho:* ${det.dsc_tamanho_produtos}\n`;
+            texto += `*Superfície:* ${det.dsc_esp_superficie}\n`;
+            texto += `*Marca:* ${det.dsc_marca}\n`;
+            texto += `*Estoque:* ${det.sdo_saldo_estoque}\n`;
+            texto += `*m² por Caixa:* ${det.prd_m2_caixa}\n\n`;
+            texto += `${det.prd_link_produto}`;
 
             try {
                 const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
