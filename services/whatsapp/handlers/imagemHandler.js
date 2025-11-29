@@ -70,24 +70,47 @@ function decodeQR(filepath) {
             const path = require("path");
             const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
 
-            const cmd = `${INLITE} decode "${filepath}" -json`;
+            // 👇 Sem -json / --json
+            const cmd = `${INLITE} decode "${filepath}"`;
 
             console.log("Executando CLI:", cmd);
 
             const result = child_process.execSync(cmd).toString();
+            console.log("🔎 Saída do BarcodeReaderCLI:\n", result);
 
-            const json = JSON.parse(result);
-
-            if (json?.Barcodes?.length) {
-                resolve(json.Barcodes[0].Text);
-            } else {
-                resolve(null);
+            // 1) Tenta achar uma URL (caso o QR seja um link)
+            const urlMatch = result.match(/https?:\/\/\S+/i);
+            if (urlMatch) {
+                return resolve(urlMatch[0]);
             }
+
+            // 2) Tenta achar diretamente padrão id=123456 na saída
+            const idMatch = result.match(/id=(\d+)/i);
+            if (idMatch) {
+                return resolve(idMatch[0]); // aqui devolve "id=123", o extrairIdDoQR pega o número
+            }
+
+            // 3) Último fallback: pega a última linha não vazia como texto do código
+            const linhas = result
+                .split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0);
+
+            if (linhas.length > 0) {
+                const ultimaLinha = linhas[linhas.length - 1];
+                return resolve(ultimaLinha);
+            }
+
+            // nada encontrado
+            resolve(null);
+
         } catch (err) {
+            console.error("❌ Erro ao decodificar QR:", err);
             resolve(null);
         }
     });
 }
+
 
 function extrairIdDoQR(text) {
     const match = text.match(/id=(\d+)/i);
