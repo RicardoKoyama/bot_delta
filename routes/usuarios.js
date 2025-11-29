@@ -42,17 +42,14 @@ router.post('/salvar', ensureAuth, (req, res) => {
           const wa =  whatsappManager.getClientByName("BOT_1");
 
           const mensagem = 
-`👋 *Bem-vindo ao BOT da Koyama Tecnologia!*
+`*Bem-vindo ao BOT da Koyama Tecnologia!*
 
-Aqui você pode consultar produtos Delta de forma rápida e simples.
+Você acaba de ser cadastrado e agora pode consultar produtos Delta de forma rápida e simples.
 
-Comandos disponíveis:
-• *cg <texto>* — busca por nome/descrição
-• *cg 1234* — busca por código
-• Envie *foto com QR Code* — consulta automática
-
-Se precisar de ajuda, envie:
-*ajuda*`;
+Meios de consulta disponíveis:
+• *texto* — Busca por nome/descrição do produto
+• *1234* — Busca pelo código 
+• Envie *foto do QR Code do mostruário* — Consulta automática`;
 
           if (wa && numero.length >= 10) {
             await wa.sendMessage(`55${numero}@c.us`, mensagem);
