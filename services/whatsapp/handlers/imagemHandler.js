@@ -70,7 +70,7 @@ function decodeQR(filepath) {
             const path = require("path");
             const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
 
-            const cmd = `${INLITE} decode "${filepath}" --json`;
+            const cmd = `${INLITE} decode "${filepath}" -json`;
 
             console.log("Executando CLI:", cmd);
 
