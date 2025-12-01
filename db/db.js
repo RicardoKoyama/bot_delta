@@ -37,17 +37,8 @@ db.serialize(() => {
       phone_number TEXT,
       nome TEXT,
       validade TEXT,
-      is_active INTEGER
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT,
-      termo TEXT,
-      resposta TEXT,
-      data TEXT
+      is_active INTEGER,
+      is_admin INTEGER DEFAULT 0
     )
   `);
 
@@ -62,16 +53,15 @@ db.serialize(() => {
   `);
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS logs (
+    CREATE TABLE IF NOT EXISTS logs_bot (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT,
-      termo TEXT,
-      resposta TEXT,
-      data TEXT
+      data_hora TEXT,
+      phone TEXT,
+      tipo TEXT,
+      mensagem TEXT,
+      info TEXT
     )
   `);
-
-
 });
 
 module.exports = db;

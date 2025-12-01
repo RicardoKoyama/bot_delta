@@ -2,6 +2,7 @@ const db = require('../../../db/db');
 const axios = require('axios');
 const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
+const { registrarLog } = require("../../../logService");
 
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
@@ -16,7 +17,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
         if (!row) {
             return msg.reply("❌ Nenhum produto encontrado para esse código.");
         }
-
+        
         return responderProduto(client, msg, row);
     }
 
@@ -109,7 +110,13 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
             try {
                 const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
-
+                
+                registrarLog({
+                    phone: msg.from.replace(/\D/g, ""),
+                    tipo: "consulta_texto",
+                    mensagem: body,
+                    info: { termo: termo }
+                });
                 // Envia imagem + legenda juntos
                 await client.sendMessage(msg.from, media, {
                     caption: texto
