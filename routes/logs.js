@@ -32,7 +32,7 @@ router.get("/", ensureAuth, (req, res) => {
     (err, rows) => {
       if (err) return res.send("Erro ao consultar logs.");
 
-      res.render("logs/index", {
+      res.render("views/logs/index", {
         logs: rows,
         filtros: { phone, data_ini, data_fim }
       });
