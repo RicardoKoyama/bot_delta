@@ -89,7 +89,7 @@ function decodeCodigo(filepath) {
             const path = require("path");
             const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
 
-            const cmd = `${INLITE} -types all "${filepath}"`;
+            const cmd = `${INLITE} -type=ean13,ean8,upca,upce,code128,code39 "${filepath}"`;
             console.log("Executando CLI:", cmd);
 
             const result = child_process.execSync(cmd).toString();
