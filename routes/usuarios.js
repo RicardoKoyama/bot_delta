@@ -45,26 +45,37 @@ router.post('/salvar', ensureAuth, (req, res) => {
           const whatsappManager = require("../services/whatsapp/WhatsAppManager");
           const wa = whatsappManager.getClientByName("BOT_1");
 
+          // Capitaliza o nome — ex: "ricardo koyama" → "Ricardo Koyama"
+          const formatarNome = (texto) =>
+            texto
+              .toLowerCase()
+              .split(" ")
+              .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+              .join(" ");
+
+          const nomeFormatado = formatarNome(nome);
+
           const mensagem = 
-`*Bem-vindo ao BOT da Koyama Tecnologia!*
+        `Prezado(a) *${nomeFormatado}*,
 
-Você acaba de ser cadastrado e agora pode consultar produtos Delta de forma rápida e simples.
+        🎉 *Seja muito bem-vindo ao BOT da Koyama Tecnologia!*
 
-Meios de consulta disponíveis:
-• *texto* — Busca por nome/descrição do produto
-• *1234* — Busca pelo código 
-• Envie *foto do QR Code do mostruário* — Consulta automática`;
+        Agora você já pode consultar produtos Delta de forma rápida e simples.
+
+        🧭 *Meios de consulta disponíveis:*
+        • Envie *nome do produto*, ex barcelona - busca por descrição que contenha *barcelona*
+        • Envie *código*, ex: 3186 — busca pelo código do produto
+        • Envie uma *foto do QR Code da peça* — consulta automática do produto`;
 
           if (wa) {
             await wa.sendMessage(`${numero}@c.us`, mensagem);
-            console.log(`📩 Boas-vindas enviada para ${numero}`);
+            console.log(`📩 Boas-vindas personalizada enviada para ${numero}`);
           } else {
             console.log("⚠️ Cliente WhatsApp não disponível.");
           }
         } catch (e) {
           console.error("❌ Erro ao enviar boas-vindas:", e);
         }
-
         return res.redirect('/usuarios');
       }
     );
