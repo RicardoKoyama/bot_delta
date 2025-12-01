@@ -20,7 +20,7 @@ wwebjs_cache/
 *.json
 
 # Logs
-logs/
+/logs/
 *.log
 
 # Temporary files

@@ -1,0 +1,43 @@
+<h1>Logs do Bot</h1>
+
+<form method="GET" action="/logs">
+  <label>Telefone:</label>
+  <input type="text" name="phone" value="<%= filtros.phone %>" placeholder="parte do número" />
+
+  <label>Data início:</label>
+  <input type="date" name="data_ini" value="<%= filtros.data_ini %>" />
+
+  <label>Data fim:</label>
+  <input type="date" name="data_fim" value="<%= filtros.data_fim %>" />
+
+  <button type="submit">Filtrar</button>
+  <a href="/logs">Limpar</a>
+</form>
+
+<br/>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+  <tr>
+    <th>ID</th>
+    <th>Data/Hora</th>
+    <th>Telefone</th>
+    <th>Tipo</th>
+    <th>Mensagem</th>
+    <th>Info</th>
+  </tr>
+
+  <% logs.forEach(l => { %>
+    <tr>
+      <td><%= l.id %></td>
+      <td><%= l.data_hora %></td>
+      <td><%= l.phone %></td>
+      <td><%= l.tipo %></td>
+      <td><%= l.mensagem %></td>
+      <td>
+        <pre style="max-width:400px; max-height:80px; overflow:auto; font-size: 12px;">
+<%= l.info %>
+        </pre>
+      </td>
+    </tr>
+  <% }) %>
+</table>
