@@ -2,6 +2,7 @@ const db = require('../../../db/db');
 const textoHandler = require('./textoHandler');
 const imagemHandler = require('./imagemHandler');
 const usuarioService = require("../../usuariosService");
+const { registrarLog } = require("../../logService");
 
 // FUNÇÃO PRINCIPAL
 module.exports = async function mainHandler(client, msg) {
