@@ -121,7 +121,7 @@ function buscarUsuarioAutorizado(numero) {
       `SELECT * FROM usuarios
        WHERE phone_number = ?
          AND is_active = 1
-         AND date(valididade) >= date('now')`,
+         AND date(validade) >= date('now')`,
       [tel],
       (err, row) => {
         if (err) return resolve(null);
