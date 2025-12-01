@@ -1,22 +1,17 @@
 const fs = require("fs");
-const { MessageMedia } = require("whatsapp-web.js");
 const child_process = require("child_process");
 const db = require("../../../db/db");
-const deltaApi = require("../../deltaApi");
 
 module.exports = async function imagemHandler(client, msg, usuario) {
     console.log("🖼️ Recebida imagem. Baixando arquivo...");
 
     try {
-        // 1 — Baixa a imagem
         const media = await msg.downloadMedia();
-
         if (!media) {
             console.log("❌ Falha ao baixar imagem.");
             return msg.reply("❌ Não consegui baixar a imagem.");
         }
 
-        // 2 — Salva temporariamente
         const filename = `temp_${Date.now()}.jpg`;
         const filepath = `./temp/${filename}`;
 
@@ -25,37 +20,58 @@ module.exports = async function imagemHandler(client, msg, usuario) {
 
         console.log("📸 Imagem salva em:", filepath);
 
-        // 3 — Decodificar QR usando Inlite CLI
-        const qr = await decodeQR(filepath);
+        const qr = await decodeCodigo(filepath);
 
         if (!qr) {
-            return msg.reply("❌ Não foi possível ler o QR Code dessa imagem.");
+            return msg.reply("❌ Não consegui ler nenhum código dessa imagem.");
         }
 
-        console.log("🔍 QR decodificado:", qr);
+        console.log("🔍 Código lido:", qr);
 
-        // 4 — Extrair ID do QR Delta
-        const id = extrairIdDoQR(qr);
-
-        if (!id) {
-            return msg.reply("❌ Não encontrei ID de produto no QR.");
-        }
-
-        console.log("🆔 ID extraído do QR:", id);
-
-        // 5 — Buscar no SQLite
-        const row = await sqlGet(
-            `SELECT * FROM produtos_delta WHERE id_site = ?`,
-            [id]
-        );
-
-        if (!row) {
-            return msg.reply("❌ Produto não encontrado no banco local.");
-        }
-
-        // 6 — Reusar responderProduto do textoHandler
         const textoHandler = require("./textoHandler");
-        return textoHandler(client, msg, row.cod_produto, usuario);
+
+        // ============================================================
+        // 🔥 1 — Se é EAN (12 a 13 dígitos)
+        // ============================================================
+        if (/^\d{12,13}$/.test(qr.trim())) {
+            const ean = qr.trim();
+            console.log("📦 Código reconhecido como EAN:", ean);
+
+            const row = await sqlGet(
+                `SELECT * FROM produtos_delta WHERE ean = ?`,
+                [ean]
+            );
+
+            if (!row) {
+                return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
+            }
+
+            return textoHandler(client, msg, row.cod_produto, usuario);
+        }
+
+        // ============================================================
+        // 🔥 2 — QR Delta contendo id=1234
+        // ============================================================
+        const id = extrairIdDoQR(qr);
+        if (id) {
+            console.log("🆔 ID extraído do QR:", id);
+
+            const row = await sqlGet(
+                `SELECT * FROM produtos_delta WHERE id_site = ?`,
+                [id]
+            );
+
+            if (!row) {
+                return msg.reply("❌ Produto não encontrado no banco local.");
+            }
+
+            return textoHandler(client, msg, row.cod_produto, usuario);
+        }
+
+        // ============================================================
+        // 🔥 3 — Caso não seja EAN e nem QR Delta
+        // ============================================================
+        return msg.reply("❌ Código não reconhecido como EAN ou QR válido.");
 
     } catch (err) {
         console.error("❌ Erro no handler de imagem:", err);
@@ -63,63 +79,53 @@ module.exports = async function imagemHandler(client, msg, usuario) {
     }
 };
 
-function decodeQR(filepath) {
+
+// ============================================================
+// Função — Decode com Inlite CLI
+// ============================================================
+function decodeCodigo(filepath) {
     return new Promise((resolve) => {
         try {
             const path = require("path");
             const INLITE = path.join(__dirname, "../../../inlite/bin/BarcodeReaderCLI");
 
-            // 👇 Apenas o arquivo como argumento
             const cmd = `${INLITE} "${filepath}"`;
-
             console.log("Executando CLI:", cmd);
 
             const result = child_process.execSync(cmd).toString();
             console.log("🔎 Saída do BarcodeReaderCLI:\n", result);
 
-            // tentar decodificar JSON completo
             try {
                 const json = JSON.parse(result);
+                const bc = json?.sessions?.[0]?.barcodes?.[0];
+                if (bc?.text) return resolve(bc.text.trim());
+            } catch (_) {}
 
-                if (json?.sessions?.length > 0 &&
-                    json.sessions[0]?.barcodes?.length > 0) {
-                    
-                    const barcode = json.sessions[0].barcodes[0];
-                    console.log("📦 Barcode JSON:", barcode);
-
-                    if (barcode?.text) {
-                        return resolve(barcode.text);
-                    }
-                }
-            } catch (e) {
-                console.log("⚠️ Não era JSON padrão, tentando parsing manual...");
-            }
-
-            // fallback — extrair texto cru
-            const linhas = result
-                .split("\n")
-                .map(l => l.trim())
-                .filter(l => l.length > 0);
-
-            if (linhas.length > 0) {
-                return resolve(linhas[linhas.length - 1]);
-            }
+            const linhas = result.split("\n").map(l => l.trim()).filter(Boolean);
+            if (linhas.length) return resolve(linhas[linhas.length - 1]);
 
             resolve(null);
 
         } catch (err) {
-            console.error("❌ Erro ao decodificar QR:", err);
+            console.error("❌ Erro ao decodificar:", err);
             resolve(null);
         }
     });
 }
 
 
-function extrairIdDoQR(text) {
-    const match = text.match(/id=(\d+)/i);
-    return match ? match[1] : null;
+// ============================================================
+// Extrai id=XXXX do QR da Delta
+// ============================================================
+function extrairIdDoQR(texto) {
+    const m = String(texto).match(/id=(\d+)/i);
+    return m ? m[1] : null;
 }
 
+
+// ============================================================
+// Query SQLite
+// ============================================================
 function sqlGet(sql, params) {
     return new Promise(resolve => {
         db.get(sql, params, (err, row) => resolve(row || null));
