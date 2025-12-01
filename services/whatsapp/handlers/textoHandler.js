@@ -2,7 +2,7 @@ const db = require('../../../db/db');
 const axios = require('axios');
 const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
-const { registrarLog } = require("../../../logService");
+const { registrarLog } = require("../../logService");
 
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
