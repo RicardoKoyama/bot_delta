@@ -1,0 +1,136 @@
+/* Fonte padrão -------------------------------------------------------- */
+body {
+  font-family: "Inter", sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f6f7;
+  color: #222;
+}
+
+/* Sidebar ------------------------------------------------------------- */
+.sidebar {
+  width: 240px;
+  background: #e8e8e8;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-right: 1px solid #ccc;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 600;
+  padding: 0 25px 20px 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.menu li {
+  margin: 5px 0;
+}
+
+.menu a {
+  display: block;
+  padding: 12px 25px;
+  text-decoration: none;
+  color: #333;
+  font-size: 15px;
+  border-left: 3px solid transparent;
+  transition: 0.2s ease;
+}
+
+.menu a:hover {
+  background: #dcdcdc;
+  border-left: 3px solid #4a4a4a;
+}
+
+.logout {
+  margin-top: auto;
+  color: #b00 !important;
+}
+
+/* Área principal ------------------------------------------------------ */
+.main {
+  margin-left: 240px;
+  padding: 25px;
+}
+
+.content-box {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+/* Tabelas -------------------------------------------------------------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  background: #efefef;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:hover td {
+  background: #fafafa;
+}
+
+/* Inputs --------------------------------------------------------------- */
+input, select, button {
+  font-family: inherit;
+  font-size: 15px;
+  padding: 8px;
+  margin: 5px 0;
+}
+
+input, select {
+  border: 1px solid #bbb;
+  border-radius: 6px;
+}
+
+button {
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 10px 15px;
+}
+
+button:hover {
+  background: #222;
+}
+
+/* Links --------------------------------------------------------------- */
+a {
+  color: #444;
+}
+a:hover {
+  opacity: 0.8;
+}

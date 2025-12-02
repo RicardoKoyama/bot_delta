@@ -1,24 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+  <meta charset="UTF-8" />
   <title>Bot Delta</title>
+
+  <!-- Fonte moderna -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Ícones -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-RXf+QSDCUQs6fF9p6QYNLyY..." crossorigin="anonymous"/>
+
+  <!-- Nosso CSS -->
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
 
-<nav>
-  <a href="/">Dashboard</a> |
-  <a href="/usuarios">Usuários</a> |
-  <a href="/contas">Contas WhatsApp</a> |
-  <a href="/logs">Logs</a> |
-  <a href="/logout">Sair</a>
-</nav>
+  <!-- SIDEBAR --------------------------------------------------------------->
+  <div class="sidebar">
+    <div class="logo">
+      <i class="fa-solid fa-robot"></i>
+      <span>Bot Delta</span>
+    </div>
 
-<hr/>
+    <ul class="menu">
+      <li><a href="/"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+      <li><a href="/usuarios"><i class="fa-solid fa-users"></i> Usuários</a></li>
+      <li><a href="/contas"><i class="fa-brands fa-whatsapp"></i> Contas WhatsApp</a></li>
+      <li><a href="/produtos"><i class="fa-solid fa-boxes-stacked"></i> Produtos Delta</a></li>
+      <li><a href="/logs"><i class="fa-solid fa-file-lines"></i> Logs</a></li>
+      <li><a href="/logout" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
+    </ul>
+  </div>
 
-<div class="content">
-  <%- include(body) %>
-</div>
+  <!-- CONTEÚDO -------------------------------------------------------------->
+  <div class="main">
+    <div class="content-box">
+      <%- include(body) %>
+    </div>
+  </div>
 
 </body>
 </html>
