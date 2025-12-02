@@ -48,7 +48,7 @@ router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
 
     // 🔥 Consulta API Delta em tempo real
     const fetch = require("node-fetch");
-    const url = `${process.env.DELTA_API}/produto/${codigo}?token=${process.env.DELTA_TOKEN}`;
+    const url = `${process.env.DELTA_API_URL}/produto/${codigo}?token=${process.env.DELTA_TOKEN}`;
     const resposta = await fetch(url);
     const detalhes = await resposta.json();
 
