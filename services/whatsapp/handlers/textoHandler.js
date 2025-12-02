@@ -6,125 +6,116 @@ const { registrarLog } = require("../../logService");
 
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
-    async function buscarPorCodigo(client, msg, cod) {
-        console.log("🔎 Buscando por código:", cod);
-
-        const row = await sqlGet(`
-            SELECT * FROM produtos_delta 
-            WHERE cod_base = ? OR cod_produto = ?
-        `, [cod, cod]);
-
-        if (!row) {
-            return msg.reply("❌ Nenhum produto encontrado para esse código.");
-        }
-        
-        return responderProduto(client, msg, row);
+    // ================================
+    // FUNÇÕES DE BANCO
+    // ================================
+    function sqlGet(sql, params) {
+        return new Promise(resolve => {
+            db.get(sql, params, (err, row) => {
+                resolve(row || null);
+            });
+        });
     }
 
-    async function buscarPorReferencia(client, msg, ref) {
-        console.log("🔎 Buscando por referência:", ref);
+    function sqlAll(sql, params) {
+        return new Promise(resolve => {
+            db.all(sql, params, (err, rows) => {
+                resolve(rows || []);
+            });
+        });
+    }
 
-        ref = ref.trim().toUpperCase();
+    // ================================
+    // BUSCAR MENSAGEM PERSONALIZADA
+    // ================================
+    async function obterMensagemCustomizada(usuario, det) {
 
-        // Se não tem -, adiciona -A
-        if (!ref.includes('-')) {
-            ref = ref + "-A";
+        let mensagem = null;
+
+        // 1 – se o usuário tem id_mensagem, tenta buscar
+        if (usuario.id_mensagem) {
+            const row = await sqlGet(
+                "SELECT mensagem FROM mensagem_whatsapp WHERE id = ?",
+                [usuario.id_mensagem]
+            );
+
+            if (row && row.mensagem) {
+                mensagem = row.mensagem;
+            }
         }
 
-        // 1 — Tenta exata
-        let row = await sqlGet(`
-            SELECT * FROM produtos_delta 
-            WHERE cod_produto = ?
-        `, [ref]);
+        // 2 – se não tiver, busca padrão
+        if (!mensagem) {
+            const rowPadrao = await sqlGet(
+                "SELECT mensagem FROM mensagem_whatsapp WHERE padrao = 1 LIMIT 1",
+                []
+            );
 
-        // 2 — Se não achou, tenta pela base
-        if (!row) {
-            const base = ref.split('-')[0];
-            row = await sqlGet(`
-                SELECT * FROM produtos_delta 
-                WHERE cod_produto LIKE ?
-            `, [`${base}-%`]);
+            if (rowPadrao && rowPadrao.mensagem) {
+                mensagem = rowPadrao.mensagem;
+            }
         }
 
-        if (!row) {
-            return msg.reply("❌ Referência não encontrada.");
+        // 3 – se não tiver nada nem padrão, usa texto fixo atual
+        if (!mensagem) {
+            mensagem =
+                `📌 *${det.dsc_abreviado}*\n\n` +
+                `*Referência:* ${det.cod_produto}\n` +
+                `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
+                `*Superfície:* ${det.dsc_esp_superficie}\n` +
+                `*Marca:* ${det.dsc_marca}\n` +
+                `*Estoque:* ${det.sdo_saldo_estoque}\n` +
+                `*m² por Caixa:* ${det.prd_m2_caixa}\n\n` +
+                `${det.prd_link_produto}`;
         }
 
-        return responderProduto(client, msg, row);
+        // 4 – substituição de variáveis dentro da mensagem
+        mensagem = mensagem
+            .replace(/{{nome}}/gi, det.dsc_abreviado || "")
+            .replace(/{{referencia}}/gi, det.cod_produto || "")
+            .replace(/{{tamanho}}/gi, det.dsc_tamanho_produtos || "")
+            .replace(/{{superficie}}/gi, det.dsc_esp_superficie || "")
+            .replace(/{{marca}}/gi, det.dsc_marca || "")
+            .replace(/{{estoque}}/gi, det.sdo_saldo_estoque || "")
+            .replace(/{{m2_caixa}}/gi, det.prd_m2_caixa || "")
+            .replace(/{{link}}/gi, det.prd_link_produto || "");
+
+        return mensagem;
     }
 
 
-
-    async function buscarPorEAN(client, msg, ean) {
-        console.log("🔎 Buscando por EAN:", ean);
-
-        const row = await sqlGet(`
-            SELECT * FROM produtos_delta 
-            WHERE it_cbarra = ?
-        `, [ean]);
-
-        if (!row) {
-            return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
-        }
-
-        return responderProduto(client, msg, row);
-    }
-
-    async function buscarPorNome(client, msg, nome) {
-        console.log("🔎 Buscando por nome:", nome);
-
-        const lista = await sqlAll(`
-        SELECT cod_produto, nome_abreviado 
-        FROM produtos_delta
-        WHERE nome_abreviado LIKE ?
-        LIMIT 10
-        `, [`%${nome}%`]);
-
-        if (!lista.length) {
-        return msg.reply("❌ Nenhum produto encontrado.");
-        }
-
-        if (lista.length === 1) {
-        return buscarPorReferencia(client, msg, lista[0].cod_produto);
-        }
-
-        let texto = "📦 Produtos encontrados:\n\n";
-        lista.forEach((p, i) => texto += `${i+1}. *${p.cod_produto}* — ${p.nome_abreviado}\n`);
-
-        return msg.reply(texto);
-    }
-
+    // ================================
+    // RESPOSTA DO PRODUTO
+    // ================================
     async function responderProduto(client, msg, row) {
         try {
-            const det = await deltaApi.detalhes(row.cod_produto);
 
-            // Monta legenda
-            let texto = `📌 *${det.dsc_abreviado}*\n\n`;
-            texto += `*Referência:* ${det.cod_produto}\n`;
-            texto += `*Tamanho:* ${det.dsc_tamanho_produtos}\n`;
-            texto += `*Superfície:* ${det.dsc_esp_superficie}\n`;
-            texto += `*Marca:* ${det.dsc_marca}\n`;
-            texto += `*Estoque:* ${det.sdo_saldo_estoque}\n`;
-            texto += `*m² por Caixa:* ${det.prd_m2_caixa}\n\n`;
-            texto += `${det.prd_link_produto}`;
+            // 👇 pega o token do usuário (ou null)
+            const tokenUsuario = usuario.token || null;
+
+            // 👇 consulta API Delta com o token dele
+            const det = await deltaApi.detalhes(row.cod_produto, tokenUsuario);
+
+            // 👇 gera texto da mensagem (personalizada ou padrão)
+            const texto = await obterMensagemCustomizada(usuario, det);
 
             try {
                 const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
-                
+
                 registrarLog({
                     phone: msg.from.replace(/\D/g, ""),
                     tipo: "consulta_texto",
                     mensagem: body,
-                    info: { termo: termo }
+                    info: { termo: body }
                 });
-                // Envia imagem + legenda juntos
+
                 await client.sendMessage(msg.from, media, {
                     caption: texto
                 });
 
             } catch (imgErr) {
                 console.log("Erro ao carregar imagem:", imgErr.message);
-                return msg.reply(texto); // fallback
+                return msg.reply(texto); // fallback sem imagem
             }
 
         } catch (e) {
@@ -134,49 +125,88 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     }
 
 
-    function sqlGet(sql, params) {
-        return new Promise(resolve => {
-            db.get(sql, params, (err, row) => {
-            resolve(row || null);
-            });
-        });
+    // ================================
+    // BUSCAS (CD, REF, EAN, NOME)
+    // ================================
+    async function buscarPorCodigo(client, msg, cod) {
+        const row = await sqlGet(`
+            SELECT * FROM produtos_delta 
+            WHERE cod_base = ? OR cod_produto = ?`,
+            [cod, cod]
+        );
+
+        if (!row) return msg.reply("❌ Nenhum produto encontrado.");
+        return responderProduto(client, msg, row);
     }
 
-    function sqlAll(sql, params) {
-        return new Promise(resolve => {
-            db.all(sql, params, (err, rows) => {
-            resolve(rows || []);
-            });
-        });
+    async function buscarPorReferencia(client, msg, ref) {
+        ref = ref.trim().toUpperCase();
+        if (!ref.includes('-')) ref += "-A";
+
+        let row = await sqlGet(`
+            SELECT * FROM produtos_delta 
+            WHERE cod_produto = ?`, [ref]);
+
+        if (!row) {
+            const base = ref.split('-')[0];
+            row = await sqlGet(
+                "SELECT * FROM produtos_delta WHERE cod_produto LIKE ? LIMIT 1",
+                [`${base}-%`]
+            );
+        }
+
+        if (!row) return msg.reply("❌ Referência não encontrada.");
+        return responderProduto(client, msg, row);
+    }
+
+    async function buscarPorEAN(client, msg, ean) {
+        const row = await sqlGet(
+            "SELECT * FROM produtos_delta WHERE it_cbarra = ?",
+            [ean]
+        );
+
+        if (!row) return msg.reply("❌ Nenhum produto encontrado.");
+        return responderProduto(client, msg, row);
+    }
+
+    async function buscarPorNome(client, msg, nome) {
+        const lista = await sqlAll(`
+            SELECT cod_produto, nome_abreviado 
+            FROM produtos_delta
+            WHERE nome_abreviado LIKE ?
+            LIMIT 10
+        `, [`%${nome}%`]);
+
+        if (!lista.length) return msg.reply("❌ Nenhum produto encontrado.");
+        if (lista.length === 1) return buscarPorReferencia(client, msg, lista[0].cod_produto);
+
+        let texto = "📦 Produtos encontrados:\n\n";
+        lista.forEach((p, i) => texto += `${i + 1}. *${p.cod_produto}* — ${p.nome_abreviado}\n`);
+
+        return msg.reply(texto);
     }
 
 
-  const termo = body.toLowerCase();
+    // ================================
+    // DECISÃO DA BUSCA
+    // ================================
+    const termo = body.toLowerCase();
 
-  console.log(`🔎 Handler texto recebeu: ${termo}`);
+    if (termo.startsWith("cd ")) {
+        return buscarPorCodigo(client, msg, termo.replace("cd ", "").trim());
+    }
 
-  // 1 — Consulta por CD (ex: cd 3186)
-  if (termo.startsWith("cd ")) {
-    const codigo = termo.replace("cd ", "").trim();
-    return buscarPorCodigo(client, msg, codigo);
-  }
+    if (/^\d{3,5}-[a-zA-Z]$/.test(termo)) {
+        return buscarPorReferencia(client, msg, termo.toUpperCase());
+    }
 
-  // 2 — Referência "3186-A"
-  if (/^\d{3,5}-[a-zA-Z]$/.test(termo)) {
-    return buscarPorReferencia(client, msg, termo.toUpperCase());
-  }
+    if (/^\d{13}$/.test(termo)) {
+        return buscarPorEAN(client, msg, termo);
+    }
 
-  // 3 — EAN 13
-  if (/^\d{13}$/.test(termo)) {
-    return buscarPorEAN(client, msg, termo);
-  }
+    if (/^\d{3,5}$/.test(termo)) {
+        return buscarPorReferencia(client, msg, termo);
+    }
 
-  // 3.5 — Apenas número (ex: "2201") → tratar como referência
-  if (/^\d{3,5}$/.test(termo)) {
-    return buscarPorReferencia(client, msg, termo);
-  }
-
-  // 4 — Busca por NOME no SQLite
-  return buscarPorNome(client, msg, termo);
-
+    return buscarPorNome(client, msg, termo);
 };
