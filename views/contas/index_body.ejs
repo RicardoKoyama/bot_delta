@@ -1,8 +1,12 @@
-<h1>Contas WhatsApp</h1>
+<h1 class="page-title">Contas WhatsApp</h1>
 
-<a href="/contas/nova">➕ Adicionar nova conta</a>
+<div class="toolbar">
+  <a href="/contas/nova" class="btn-primary">
+    <i class="fa-solid fa-plus"></i> Nova conta
+  </a>
+</div>
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="table">
   <tr>
     <th>ID</th>
     <th>Nome</th>
@@ -17,25 +21,41 @@
       <td><%= c.id %></td>
       <td><%= c.nome %></td>
       <td><%= c.numero %></td>
+
       <td>
         <% if (c.status === 'ativo') { %>
-          <span style="color:green;font-weight:bold">ATIVO</span>
+          <span class="status success">ATIVO</span>
         <% } else if (c.status === 'pendente') { %>
-          <span style="color:orange;font-weight:bold">PENDENTE</span>
+          <span class="status warning">PENDENTE</span>
         <% } else { %>
-          <span style="color:red;font-weight:bold">DESCONECTADO</span>
+          <span class="status danger">DESCONECTADO</span>
         <% } %>
       </td>
+
       <td><%= c.updated_at %></td>
 
       <td>
-        <a href="/contas/editar/<%= c.id %>">✏ Editar</a> |
-        <a href="/contas/excluir/<%= c.id %>"
-           onclick="return confirm('Excluir conta?')">🗑 Excluir</a> |
-        <a href="/contas/qrcode/<%= c.id %>">📱 QR</a> |
-        <a href="/contas/restart/<%= c.id %>">↻ Reiniciar</a>
+        <a href="/contas/editar/<%= c.id %>" class="action-link">
+          <i class="fa-solid fa-pen"></i> Editar
+        </a>
+
+        |
+        <a href="/contas/excluir/<%= c.id %>" 
+           class="action-link danger"
+           onclick="return confirm('Excluir conta?')">
+           <i class="fa-solid fa-trash"></i> Excluir
+        </a>
+
+        |
+        <a href="/contas/qrcode/<%= c.id %>" class="action-link">
+          <i class="fa-solid fa-qrcode"></i> QR
+        </a>
+
+        |
+        <a href="/contas/restart/<%= c.id %>" class="action-link">
+          <i class="fa-solid fa-rotate-right"></i> Reiniciar
+        </a>
       </td>
     </tr>
   <% }) %>
-
 </table>

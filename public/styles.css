@@ -207,3 +207,38 @@ a:hover {
 .btn-login:hover {
   background: #222;
 }
+
+.status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status.success {
+  background: #e8f9ee;
+  color: #0c8a2d;
+}
+
+.status.warning {
+  background: #fff4d6;
+  color: #b17b00;
+}
+
+.status.danger {
+  background: #ffe5e5;
+  color: #b30000;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  background: #ddd;
+  border-radius: 6px;
+  margin-left: 10px;
+  color: #333;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: #ccc;
+}
