@@ -19,14 +19,30 @@ router.get('/', ensureAuth, (req, res) => {
   sql += " ORDER BY cod_produto LIMIT 200";
 
   db.all(sql, params, (err, rows) => {
+
+    // 🚨 Tratamento de erro
+    if (err) {
+      console.error("Erro ao consultar produtos_delta:", err);
+
+      return res.render("produtos/index", {
+        produtos: [],
+        busca: req.query.busca || "",
+        erro: "Erro ao consultar produtos"
+      });
+    }
+
+    // 🚨 Garantia de fallback
+    if (!rows) rows = [];
+
     res.render('produtos/index', {
       produtos: rows,
-      busca: req.query.busca || ""
+      busca: req.query.busca || "",
+      erro: null
     });
   });
 });
 
-// PLACEHOLDER PARA EXPORTAÇÃO CSV
+// EXPORTAÇÃO
 router.get('/exportar', ensureAuth, (req, res) => {
   res.send("<h2>Exportação CSV será adicionada aqui!</h2>");
 });

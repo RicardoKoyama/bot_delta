@@ -22,21 +22,25 @@
     <th>ID Site</th>
   </tr>
 
-  <% produtos.forEach(p => { %>
-    <tr>
-      <td>
-        <% if (p.img_url) { %>
-          <img src="<%= p.img_url %>" width="80"/>
-        <% } else { %>
-          -
-        <% } %>
-      </td>
+  <% if (!produtos || produtos.length === 0) { %>
+  <p>Nenhum produto encontrado.</p>
+  <% } else { %>
+    <% produtos.forEach(p => { %>
+      <tr>
+        <td>
+          <% if (p.img_url) { %>
+            <img src="<%= p.img_url %>" width="80"/>
+          <% } else { %>
+            -
+          <% } %>
+        </td>
 
-      <td><%= p.cod_produto %></td>
-      <td><%= p.nome_abreviado %></td>
-      <td><%= p.estoque %></td>
-      <td><%= p.id_site %></td>
-    </tr>
-  <% }) %>
+        <td><%= p.cod_produto %></td>
+        <td><%= p.nome_abreviado %></td>
+        <td><%= p.estoque %></td>
+        <td><%= p.id_site %></td>
+      </tr>
+    <% }) %>
+  <% } %>
 
 </table>

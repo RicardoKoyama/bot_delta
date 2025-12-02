@@ -1,6 +1,7 @@
 <h1>Logs do Bot</h1>
 
 <form method="GET" action="/logs">
+
   <label>Telefone:</label>
   <input type="text" name="phone" value="<%= filtros.phone %>" placeholder="parte do número" />
 
@@ -10,9 +11,20 @@
   <label>Data fim:</label>
   <input type="date" name="data_fim" value="<%= filtros.data_fim %>" />
 
+  <label>Tipo:</label>
+  <select name="tipo">
+    <option value="">Todos</option>
+    <option value="SYNC_DELTA" <%= filtros.tipo === "SYNC_DELTA" ? "selected" : "" %>>Sincronização Delta</option>
+    <option value="SYNC_DELTA_ERRO" <%= filtros.tipo === "SYNC_DELTA_ERRO" ? "selected" : "" %>>Erros Delta</option>
+    <option value="WHATSAPP" <%= filtros.tipo === "WHATSAPP" ? "selected" : "" %>>WhatsApp</option>
+    <option value="ERRO" <%= filtros.tipo === "ERRO" ? "selected" : "" %>>Erros gerais</option>
+    <option value="INFO" <%= filtros.tipo === "INFO" ? "selected" : "" %>>Informações Gerais</option>
+  </select>
+
   <button type="submit">Filtrar</button>
   <a href="/logs">Limpar</a>
 </form>
+
 
 <br/>
 

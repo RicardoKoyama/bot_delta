@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const whatsappManager = require('./services/whatsapp/WhatsAppManager');
 const cron = require("node-cron");
 const { sincronizarLista, sincronizarDetalhes } = require("./services/deltaSync");
+const { registrarLog } = require("./services/logService");  // <-- ADICIONADO
 
 const app = express();
 
@@ -37,14 +38,41 @@ app.use('/logs', logsRoutes);
 
 whatsappManager.iniciarTodas();
 
+
+// =====================================================================
+// 🕒 CRON: Sincronização diária da Delta (03:00)
+// =====================================================================
 cron.schedule("0 3 * * *", async () => {
   try {
     console.log("⏰ Executando sincronização da Delta...");
-    await sincronizarLista();
-    await sincronizarDetalhes();
+
+    await registrarLog({
+      phone: null,
+      tipo: "SYNC_DELTA",
+      mensagem: "Iniciando sincronização diária da Delta",
+      info: {}
+    });
+
+    const lista = await sincronizarLista();
+    const detalhes = await sincronizarDetalhes();
+
+    await registrarLog({
+      phone: null,
+      tipo: "SYNC_DELTA",
+      mensagem: "Sincronização finalizada com sucesso",
+      info: { lista: lista.length || 0 }
+    });
+
     console.log("✔ Sincronização concluída.");
   } catch (e) {
     console.error("❌ Erro na sincronização diária:", e);
+
+    await registrarLog({
+      phone: null,
+      tipo: "SYNC_DELTA_ERRO",
+      mensagem: "Erro durante a sincronização da Delta",
+      info: { erro: e.message }
+    });
   }
 });
 

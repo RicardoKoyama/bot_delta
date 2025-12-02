@@ -1,5 +1,7 @@
 const db = require('../db/db');
 const { listaCompleta, detalhes } = require('./deltaApi');
+const { registrarLog } = require("./logService");   // <-- ADICIONADO
+
 
 function getProdutosExistentes() {
   return new Promise(resolve => {
@@ -42,29 +44,57 @@ function salvarBasicos(item) {
   ]);
 }
 
+
+// =====================================================================
+// LISTA
+// =====================================================================
 async function sincronizarLista() {
-  console.log("🔄 Sincronizando LISTA da Delta...");
+  await registrarLog({
+    phone: null,
+    tipo: "SYNC_DELTA",
+    mensagem: "Sincronizando LISTA da Delta...",
+    info: {}
+  });
 
   const lista = await listaCompleta();
-  const existentes = await getProdutosExistentes();
-
+  
   for (const item of lista) {
     salvarBasicos(item);
   }
 
-  console.log(`✔ Lista atualizada: ${lista.length} itens.`);
+  await registrarLog({
+    phone: null,
+    tipo: "SYNC_DELTA",
+    mensagem: `Lista atualizada com ${lista.length} itens`,
+    info: { total: lista.length }
+  });
+
   return lista;
 }
 
+
+// =====================================================================
+// DETALHES
+// =====================================================================
 async function sincronizarDetalhes() {
-  console.log("🔄 Buscando detalhes APENAS dos novos itens...");
+  await registrarLog({
+    phone: null,
+    tipo: "SYNC_DELTA",
+    mensagem: "Sincronizando DETALHES (apenas itens novos)...",
+    info: {}
+  });
 
   const lista = await listaCompleta();
   const existentes = await getProdutosExistentes();
 
   const novos = lista.filter(p => !existentes.includes(p.cod_produto));
 
-  console.log(`➕ Encontrados ${novos.length} novos itens.`);
+  await registrarLog({
+    phone: null,
+    tipo: "SYNC_DELTA",
+    mensagem: `Foram encontrados ${novos.length} novos itens`,
+    info: {}
+  });
 
   for (const item of novos) {
     const cod = item.cod_produto;
@@ -72,6 +102,7 @@ async function sincronizarDetalhes() {
     try {
       const det = await detalhes(cod);
 
+      // Montar id_site
       const url = det.prd_link_produto || null;
       let id_site = null;
       if (url) {
@@ -85,16 +116,33 @@ async function sincronizarDetalhes() {
         img_url: det.prd_link_img_produto
       });
 
-      console.log(`✔ Detalhes de ${cod} sincronizados.`);
+      await registrarLog({
+        phone: null,
+        tipo: "SYNC_DELTA",
+        mensagem: `Detalhes sincronizados para ${cod}`,
+        info: {}
+      });
 
       await new Promise(r => setTimeout(r, 300));
 
     } catch (e) {
-      console.log(`❌ Falha em ${cod}: ${e.message}`);
+      await registrarLog({
+        phone: null,
+        tipo: "SYNC_DELTA_ERRO",
+        mensagem: `Erro ao sincronizar detalhes de ${cod}`,
+        info: { erro: e.message }
+      });
     }
   }
 
-  console.log("🎉 Detalhes concluídos!");
+  await registrarLog({
+    phone: null,
+    tipo: "SYNC_DELTA",
+    mensagem: "Sincronização de detalhes concluída!",
+    info: {}
+  });
+
+  return novos;
 }
 
 module.exports = {
