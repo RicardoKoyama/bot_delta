@@ -6,7 +6,9 @@ const { registrarLog } = require("../../logService");
 
 // FUNÇÃO PRINCIPAL
 module.exports = async function mainHandler(client, msg) {
-  const from = msg.from;
+  const contato = await msg.getContact();
+  const from = contato.number;
+  //const from = msg.from;
   const body = (msg.body || "").trim();
   const type = msg.type;
 
