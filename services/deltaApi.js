@@ -1,7 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const BASE = "https://portal-api.deltaceramica.com.br/api/v1/consulta_estoque";
+const BASE = process.env.DELTA_API_URL;
 
 async function listaCompleta(tokenUsuario = null) {
     const apikey = tokenUsuario || process.env.DELTA_API_KEY;

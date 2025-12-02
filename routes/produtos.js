@@ -48,7 +48,7 @@ router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
     const codigo = req.params.codigo;
 
     const BASE = process.env.DELTA_API_URL;
-    const APIKEY = process.env.DELTA_TOKEN;
+    const apikey = tokenUsuario || process.env.DELTA_API_KEY;
 
     if (!BASE || !BASE.startsWith("http")) {
       console.error("❌ DELTA_API_URL inválida:", BASE);
@@ -62,7 +62,7 @@ router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
     const headers = {
       accept: "application/json",
       "content-type": "application/json",
-      apikey: APIKEY,
+      apikey: apikey,
       "User-Agent": "BotDelta/1.0"
     };
 
