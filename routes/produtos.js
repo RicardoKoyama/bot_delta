@@ -42,6 +42,25 @@ router.get('/', ensureAuth, (req, res) => {
   });
 });
 
+router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
+  try {
+    const codigo = req.params.codigo;
+
+    // 🔥 Consulta API Delta em tempo real
+    const fetch = require("node-fetch");
+    const url = `${process.env.DELTA_API}/produto/${codigo}?token=${process.env.DELTA_TOKEN}`;
+    const resposta = await fetch(url);
+    const detalhes = await resposta.json();
+
+    res.render("produtos/detalhes", { detalhes });
+
+  } catch (err) {
+    console.error("Erro ao consultar detalhes:", err);
+    res.send("Erro ao consultar API.");
+  }
+});
+
+
 // EXPORTAÇÃO
 router.get('/exportar', ensureAuth, (req, res) => {
   res.send("<h2>Exportação CSV será adicionada aqui!</h2>");
