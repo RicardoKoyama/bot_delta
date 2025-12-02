@@ -59,7 +59,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
         // 3 – se não tiver nada nem padrão, usa texto fixo atual
         if (!mensagem) {
             mensagem =
-                `📌 *${det.dsc_abreviado}*\n\n` +
+                `📌 *${det.dsc_item}*\n\n` +
                 `*Referência:* ${det.cod_produto}\n` +
                 `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
                 `*Superfície:* ${det.dsc_esp_superficie}\n` +
@@ -71,7 +71,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         // 4 – substituição de variáveis dentro da mensagem
         mensagem = mensagem
-            .replace(/{{nome}}/gi, det.dsc_abreviado || "")
+            .replace(/{{nome}}/gi, det.dsc_item || "")
             .replace(/{{referencia}}/gi, det.cod_produto || "")
             .replace(/{{tamanho}}/gi, det.dsc_tamanho_produtos || "")
             .replace(/{{superficie}}/gi, det.dsc_esp_superficie || "")
