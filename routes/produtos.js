@@ -44,21 +44,43 @@ router.get('/', ensureAuth, (req, res) => {
 
 router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
   try {
+    const axios = require("axios");
     const codigo = req.params.codigo;
 
-    // 🔥 Consulta API Delta em tempo real
-    const fetch = require("node-fetch");
-    const url = `${process.env.DELTA_API_URL}/produto/${codigo}?token=${process.env.DELTA_TOKEN}`;
-    const resposta = await fetch(url);
-    const detalhes = await resposta.json();
+    const BASE = process.env.DELTA_API_URL;
+    const APIKEY = process.env.DELTA_TOKEN;
+
+    if (!BASE || !BASE.startsWith("http")) {
+      console.error("❌ DELTA_API_URL inválida:", BASE);
+      return res.send("Erro: DELTA_API_URL inválida no .env");
+    }
+
+    // Remover barras duplicadas
+    const cleanBase = BASE.replace(/\/+$/, "");
+
+    // 🔥 Headers obrigatórios da Delta
+    const headers = {
+      accept: "application/json",
+      "content-type": "application/json",
+      apikey: APIKEY,
+      "User-Agent": "BotDelta/1.0"
+    };
+
+    const url = `${cleanBase}/${codigo}`;
+
+    console.log("🔎 Consulta detalhes Delta:", url);
+
+    const resposta = await axios.get(url, { headers });
+    const detalhes = resposta.data;
 
     res.render("produtos/detalhes", { detalhes });
 
   } catch (err) {
-    console.error("Erro ao consultar detalhes:", err);
-    res.send("Erro ao consultar API.");
+    console.error("❌ Erro ao consultar detalhes:", err);
+    res.send("Erro ao consultar API Delta.");
   }
 });
+
 
 
 // EXPORTAÇÃO
