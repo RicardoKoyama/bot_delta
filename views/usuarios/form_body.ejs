@@ -1,24 +1,54 @@
-<h1><%= usuario ? "Editar Usuário" : "Novo Usuário" %></h1>
+<h1 class="page-title"><%= usuario ? "Editar Usuário" : "Novo Usuário" %></h1>
 
-<form method="POST" action="/usuarios/salvar">
-  
+<form method="POST" action="/usuarios/salvar" class="form">
+
   <% if (usuario) { %>
     <input type="hidden" name="id" value="<%= usuario.id %>">
   <% } %>
 
-  <label>Nome:</label><br/>
-  <input type="text" name="nome" value="<%= usuario ? usuario.nome : '' %>" required><br/><br/>
+  <label class="form-label">Nome</label>
+  <input type="text" name="nome" class="form-input"
+         value="<%= usuario ? usuario.nome : '' %>" required />
 
-  <label>Telefone (somente números):</label><br/>
-  <input type="text" name="phone_number" value="<%= usuario ? usuario.phone_number : '' %>" required><br/><br/>
+  <label class="form-label">Telefone</label>
+  <input type="text" name="phone_number" class="form-input"
+         value="<%= usuario ? usuario.phone_number : '' %>" required />
 
-  <label>Validade:</label><br/>
-  <input type="date" name="validade" value="<%= usuario ? usuario.validade : '' %>" required><br/><br/>
+  <label class="form-label">Validade</label>
+  <input type="date" name="validade" class="form-input"
+         value="<%= usuario ? usuario.validade : '' %>" required />
 
-  <label>Ativo?</label>
-  <input type="checkbox" name="is_active" <%= usuario && usuario.is_active ? 'checked' : '' %>><br/><br/>
+  <label class="form-label">Ativo?</label>
+  <input type="checkbox" name="is_active"
+         <%= usuario && usuario.is_active ? 'checked' : '' %> />
 
-  <button type="submit">Salvar</button>
-  <a href="/usuarios">Cancelar</a>
+  <br><br>
 
+  <label class="form-label">Administrador?</label>
+  <input type="checkbox" name="is_admin"
+         <%= usuario && usuario.is_admin ? 'checked' : '' %> />
+
+  <br><br>
+
+  <label class="form-label">Mensagem personalizada</label>
+  <select name="id_mensagem" class="form-input">
+    <option value="">(usar padrão)</option>
+    <% mensagens.forEach(m => { %>
+      <option value="<%= m.id %>"
+        <%= usuario && usuario.id_mensagem === m.id ? "selected" : "" %>>
+        <%= m.descricao %>
+      </option>
+    <% }) %>
+  </select>
+
+  <label class="form-label">Token (opcional)</label>
+  <input name="token" class="form-input"
+         placeholder="Token individual"
+         value="<%= usuario && usuario.token ? usuario.token : '' %>" />
+
+  <button class="btn-primary" style="margin-top:20px">
+    <i class="fa-solid fa-check"></i> Salvar
+  </button>
+
+  <a href="/usuarios" class="btn-secondary">Cancelar</a>
 </form>

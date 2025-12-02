@@ -1,14 +1,21 @@
-<h1>Usuários Autorizados</h1>
+<h1 class="page-title">Usuários Autorizados</h1>
 
-<a href="/usuarios/novo">➕ Novo usuário</a>
+<div class="toolbar">
+  <a href="/usuarios/novo" class="btn-primary">
+    <i class="fa-solid fa-plus"></i> Novo usuário
+  </a>
+</div>
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="table">
   <tr>
     <th>ID</th>
     <th>Nome</th>
     <th>Telefone</th>
     <th>Validade</th>
     <th>Ativo</th>
+    <th>Admin</th>
+    <th>Mensagem</th>
+    <th>Token</th>
     <th>Ações</th>
   </tr>
 
@@ -18,6 +25,7 @@
       <td><%= u.nome %></td>
       <td><%= u.phone_number %></td>
       <td><%= u.validade %></td>
+
       <td>
         <% if (u.is_active) { %>
           <span style="color:green;font-weight:bold">ATIVO</span>
@@ -25,11 +33,22 @@
           <span style="color:red;font-weight:bold">INATIVO</span>
         <% } %>
       </td>
+
+      <td><%= u.is_admin ? "Sim" : "Não" %></td>
+      <td><%= u.mensagem_descricao || "-" %></td>
+      <td><%= u.token ? "🔑" : "-" %></td>
+
       <td>
-        <a href="/usuarios/editar/<%= u.id %>">✏ Editar</a> |
+        <a href="/usuarios/editar/<%= u.id %>" class="action-link">
+          <i class="fa-solid fa-pen"></i> Editar
+        </a>
+        |
         <a href="/usuarios/excluir/<%= u.id %>"
-           onclick="return confirm('Excluir este usuário?')">🗑 Excluir</a>
+           class="action-link danger"
+           onclick="return confirm('Excluir este usuário?')">
+           <i class="fa-solid fa-trash"></i> Excluir
+        </a>
       </td>
     </tr>
   <% }) %>
-</table>
+</
