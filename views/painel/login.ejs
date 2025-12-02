@@ -1,25 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+  <meta charset="UTF-8">
   <title>Login – Bot Delta</title>
+
+  <!-- Fonte -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Ícones -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-RXf+QSDCUQs6fF9p6QYNLyY..."
+        crossorigin="anonymous" />
+
+  <!-- Nosso CSS -->
+  <link rel="stylesheet" href="/styles.css">
+
 </head>
-<body>
+<body class="login-body">
 
-<h2>Login</h2>
+  <div class="login-container">
+    <div class="login-card">
 
-<% if (error) { %>
-<p style="color:red"><%= error %></p>
-<% } %>
+      <div class="login-title">
+        <i class="fa-solid fa-robot"></i> Bot Delta
+      </div>
 
-<form method="POST" action="/login">
-  Usuário:<br/>
-  <input type="text" name="usuario"/><br/><br/>
+      <form method="POST" action="/login">
 
-  Senha:<br/>
-  <input type="password" name="senha"/><br/><br/>
+        <label class="form-label">Usuário</label>
+        <input type="text" name="usuario" class="form-input" required />
 
-  <button type="submit">Entrar</button>
-</form>
+        <label class="form-label">Senha</label>
+        <input type="password" name="senha" class="form-input" required />
+
+        <button type="submit" class="btn-login">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar
+        </button>
+
+      </form>
+    </div>
+  </div>
 
 </body>
 </html>
