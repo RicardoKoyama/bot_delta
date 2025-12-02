@@ -8,7 +8,7 @@ router.get('/', ensureAuth, (req, res) => {
   const busca = req.query.busca ? `%${req.query.busca}%` : null;
 
   let sql =
-    "SELECT cod_produto, nome_abreviado, estoque, img_url, id_site FROM produtos_delta";
+    "SELECT cod_produto, nome_abreviado, img_url, id_site FROM produtos_delta";
   let params = [];
 
   if (busca) {
