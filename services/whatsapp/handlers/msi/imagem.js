@@ -12,7 +12,7 @@ module.exports = {
         const { rows } = await pool.query(`
             SELECT produto, nome, referenciafabrica
             FROM produtos
-            WHERE gtin = $1 OR codigobarras = $1
+            WHERE codigobarra = $1
             LIMIT 1
         `, [codigo]);
 

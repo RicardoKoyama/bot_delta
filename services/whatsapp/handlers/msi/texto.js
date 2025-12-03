@@ -4,10 +4,9 @@ const { MessageMedia } = require('whatsapp-web.js');
 
 async function consultaCliente(termo) {
     const { rows } = await pool.query(`
-        SELECT nome, cgccpf, telefoneramal
-        FROM fisicajuridica
-        WHERE pessoa = 1
-        AND nome ILIKE $1
+        SELECT codigo, nome, telefone, limitecredito
+        FROM vp_jlf_whatsapp_consulta_cliente
+        WHERE nome ILIKE $1
         LIMIT 10
     `, [`%${termo}%`]);
 
@@ -17,8 +16,8 @@ async function consultaCliente(termo) {
 
     rows.forEach((c, i) => {
         msg += `*${i+1}.* ${c.nome}\n`;
-        msg += `📞 ${c.telefoneramal}\n`;
-        msg += `📍 CPF/CNPJ: ${c.cgccpf}\n\n`;
+        msg += `📞 ${c.telefone}\n`;
+        msg += `Limite Crédito: ${c.limitecredito}\n\n`;
     });
 
     return msg;
