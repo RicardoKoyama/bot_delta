@@ -3,9 +3,6 @@ const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../logService");
 
-// =============================================================================
-// HELPERS SQLITE
-// =============================================================================
 function sqlGet(sql, params) {
     return new Promise(resolve => {
         db.get(sql, params, (err, row) => resolve(row || null));
@@ -18,9 +15,6 @@ function sqlAll(sql, params) {
     });
 }
 
-// =============================================================================
-// HANDLER PRINCIPAL DE TEXTO
-// =============================================================================
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
     const termo = (body || "").trim().toLowerCase();
@@ -112,19 +106,11 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     // -------------------------------------------------------------------------
     // BUSCAS
     // -------------------------------------------------------------------------
-    async function buscarPorCodigo(cod) {
-        const row = await sqlGet(
-            "SELECT * FROM produtos WHERE codigo = ?",
-            [cod]
-        );
-        if (!row) return msg.reply("❌ Produto não encontrado.");
-        return responderProduto(row);
-    }
 
     async function buscarPorReferencia(ref) {
         console.log('Referencia buscada ', ref);
         const row = await sqlGet(
-            "SELECT * FROM produtos WHERE referencia = ?",
+            "SELECT * FROM produtos WHERE codigo = ?",
             [ref]
         );
         if (!row) return msg.reply("❌ Referência não encontrada.");
@@ -151,18 +137,9 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
         if (lista.length === 1) return buscarPorCodigo(lista[0].cod_produto);
 
         let texto = "📦 *Produtos encontrados:*\n\n";
-        lista.forEach((p, i) => texto += `${i + 1}. *${p.cod_produto}* — ${p.nome_abreviado}\n`);
+        lista.forEach((p, i) => texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`);
 
         return msg.reply(texto);
-    }
-
-    // -------------------------------------------------------------------------
-    // DECISOR PRINCIPAL
-    // -------------------------------------------------------------------------
-
-    // CD 1234
-    if (termo.startsWith("cd ")) {
-        return buscarPorCodigo(termo.replace("cd ", "").trim().toUpperCase());
     }
 
     // EAN 13
