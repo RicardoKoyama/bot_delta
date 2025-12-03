@@ -74,7 +74,7 @@ db.serialize(() => {
   `);
 
   db.run(`
-    CREATE TABLE mensagem_whatsapp (
+    CREATE TABLE IF NOT EXISTS mensagem_whatsapp (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao TEXT,
       mensagem TEXT NOT NULL,
