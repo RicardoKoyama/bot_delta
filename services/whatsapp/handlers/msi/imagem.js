@@ -1,5 +1,5 @@
 const { pool } = require('../../../../services/dbService');
-const { decodeQRCodeImage } = require('../../../handlers/qrHandle');
+const { decodeQRCodeImage } = require('../../../../handlers/qrHandle');
 
 module.exports = {
     process: async (message, accountId, client) => {
