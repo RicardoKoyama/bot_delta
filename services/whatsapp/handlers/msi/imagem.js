@@ -1,5 +1,5 @@
 const { decodeImage } = require('./utils/decodeUtils');
-const { pool } = require('../../../services/dbService');
+const { pool } = require('../../../../services/dbService');
 
 module.exports = {
     process: async (message, accountId, client) => {

@@ -1,4 +1,4 @@
-const { pool } = require('../../../services/dbService');
+const { pool } = require('../../../../services/dbService');
 const { gerarFaturamento } = require('./utils/fatHelper');  // ainda vou criar abaixo
 const { MessageMedia } = require('whatsapp-web.js');
 
