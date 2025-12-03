@@ -1,4 +1,4 @@
-const { pool } = require('../../../services/dbService');
+const { pool } = require('../../../../services/dbService');
 const { decodeQRCodeImage } = require('../../../handlers/qrHandle');
 
 module.exports = {
