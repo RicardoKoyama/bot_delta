@@ -122,6 +122,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     }
 
     async function buscarPorReferencia(ref) {
+        console.log('Referencia buscada ', ref);
         const row = await sqlGet(
             "SELECT * FROM produtos WHERE referencia = ?",
             [ref]
