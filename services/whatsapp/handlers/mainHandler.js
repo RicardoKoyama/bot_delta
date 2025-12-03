@@ -4,10 +4,41 @@ const imagemHandler = require('./imagemHandler');
 const usuarioService = require("../../usuariosService");
 const { registrarLog } = require("../../logService");
 
+async function normalizarNumero(raw) {
+  if (!raw) return "";
+
+  // Limpa o ID
+  const lid = raw
+    .replace("@c.us", "")
+    .replace("@s.whatsapp.net", "")
+    .replace("@lid", "")
+    .replace(/\D/g, "");
+
+  // Se já for número real (começa com 55 e tem 12 ou 13 dígitos)
+  if (lid.startsWith("55") && lid.length >= 12 && lid.length <= 13) {
+    return lid;
+  }
+
+  // Buscar no banco o LID associado
+  return new Promise((resolve) => {
+    db.get(
+      `SELECT phone_number FROM whatsapp_lid_map WHERE lid = ? LIMIT 1`,
+      [lid],
+      (err, row) => {
+        if (row && row.phone_number) {
+          resolve(row.phone_number);
+        } else {
+          resolve(lid); // fallback
+        }
+      }
+    );
+  });
+}
+
+
 // FUNÇÃO PRINCIPAL
 module.exports = async function mainHandler(client, msg) {
-  const from = extrairNumero(msg.from);
-  //const from = msg.from;
+  const from = await normalizarNumero(msg.from);
   const body = (msg.body || "").trim();
   const type = msg.type;
 
