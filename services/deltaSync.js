@@ -73,6 +73,8 @@ async function sincronizarLista() {
     info: {}
   });
 
+  console.log('Sincronizando LISTA da Delta...')
+
   const lista = await listaCompleta();
 
   for (const item of lista) {
