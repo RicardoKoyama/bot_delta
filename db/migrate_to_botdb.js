@@ -109,7 +109,7 @@ function migrarProdutos() {
   return new Promise((resolve, reject) => {
     console.log("📥 Migrando produtos...");
 
-    oldDB.all("SELECT * FROM delta_produtos", (err, rows) => {
+    oldDB.all("SELECT * FROM produtos", (err, rows) => {
       if (err) return reject(err);
 
       if (rows.length === 0) {
