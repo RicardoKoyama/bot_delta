@@ -57,13 +57,13 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     // -------------------------------------------------------------------------
     function aplicarTemplate(txt, d) {
         return txt
-            .replace(/{{nome}}/gi, d.nome || "")
-            .replace(/{{referencia}}/gi, d.referencia || "")
-            .replace(/{{tamanho}}/gi, d.tamanho || "")
-            .replace(/{{superficie}}/gi, d.superficie || "")
-            .replace(/{{marca}}/gi, d.marca || "")
-            .replace(/{{m2_caixa}}/gi, d.m2_caixa || "")
-            .replace(/{{link}}/gi, d.url_produto || "");
+            .replace(/{{nome}}/gi, d.dsc_item || "")
+            .replace(/{{referencia}}/gi, d.cod_produto || "")
+            .replace(/{{tamanho}}/gi, d.dsc_tamanho_produtos || "")
+            .replace(/{{superficie}}/gi, d.dsc_esp_superficie || "")
+            .replace(/{{marca}}/gi, d.dsc_marca || "")
+            .replace(/{{m2_caixa}}/gi, d.prd_m2_caixa || "")
+            .replace(/{{link}}/gi, d.prd_link_produto || "");
     }
 
     // -------------------------------------------------------------------------
@@ -82,8 +82,8 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
             // Tenta enviar com imagem
             try {
-                if (det.img_url) {
-                    const media = await MessageMedia.fromUrl(det.img_url, { unsafeMime: true });
+                if (det.prd_link_img_produto) {
+                    const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
                     await client.sendMessage(msg.from, media, { caption: texto });
                 } else {
                     await msg.reply(texto);
