@@ -52,9 +52,10 @@ module.exports = async function imagemHandler(client, msg, usuario) {
         // 🔥 2 — QR Delta contendo id=XXXX
         // ============================================================
         const id = extrairIdDoQR(qr);
+        console.log('ID / QR', id, qr);
         if (id) {
             const row = await sqlGet(
-                `SELECT * FROM produtos WHERE url_produto like ?`,
+                `SELECT * FROM produtos WHERE id_site like ?`,
                 [id]
             );
 
