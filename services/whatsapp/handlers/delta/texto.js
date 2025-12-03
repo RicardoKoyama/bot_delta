@@ -1,7 +1,7 @@
 const db = require('../../../../db/db');
-const deltaApi = require('../../deltaApi');
+const deltaApi = require('../../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
-const { registrarLog } = require("../../logService");
+const { registrarLog } = require("../../../logService");
 
 function sqlGet(sql, params) {
     return new Promise(resolve => {
