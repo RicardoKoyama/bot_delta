@@ -42,13 +42,13 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         // Sem template → monta texto simples
         return (
-            `📌 *${det.nome}*\n\n` +
-            `*Referência:* ${det.referencia}\n` +
-            `*Tamanho:* ${det.tamanho}\n` +
-            `*Superfície:* ${det.superficie}\n` +
-            `*Marca:* ${det.marca}\n` +
-            `*m² por Caixa:* ${det.m2_caixa}\n\n` +
-            `${det.url_produto}`
+            `📌 *${det.dsc_item}*\n\n` +
+            `*Referência:* ${det.cod_produto}\n` +
+            `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
+            `*Superfície:* ${det.dsc_esp_superficie}\n` +
+            `*Marca:* ${det.dsc_marca}\n` +
+            `*m² por Caixa:* ${det.prd_m2_caixa}\n\n` +
+            `${det.prd_link_produto}`
         );
     }
 
