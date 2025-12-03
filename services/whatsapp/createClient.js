@@ -88,8 +88,9 @@ async function createClient(conta) {
   // ----------------------------------------
   client.on('message', async msg => {
     try {
-      const mainHandler = require('./handlers/mainHandler');
-      await mainHandler(client, msg);
+      const router = require('./handlers/router');
+      //const mainHandler = require('./handlers/mainHandler');
+      await router(client, msg);
     } catch (err) {
       console.error("Erro no handler:", err);
     }
