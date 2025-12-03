@@ -2,9 +2,9 @@ const db = require('../db/db');
 const { listaCompleta, detalhes } = require('./deltaApi');
 const { registrarLog } = require("./logService");
 
-// ---------------------------------------------------------------------
-// PRODUTOS EXISTENTES
-// ---------------------------------------------------------------------
+//
+// Buscar produtos já existentes no banco
+//
 function getProdutosExistentes() {
   return new Promise(resolve => {
     db.all("SELECT codigo FROM produtos", (err, rows) => {
@@ -14,42 +14,57 @@ function getProdutosExistentes() {
   });
 }
 
-// ---------------------------------------------------------------------
-// SALVAR PRODUTO
-// ---------------------------------------------------------------------
+//
+// Salvar produto no banco
+//
 function salvarProduto(item) {
   db.run(`
     INSERT OR REPLACE INTO produtos (
-      codigo, referencia, nome, nome_abreviado, codigo_barra,
-      tamanho, marca, superficie, m2_caixa, peso_caixa,
-      caixas_pallet, m2_pallet, peso_pallet,
-      fora_linha, url_produto, id_site, imagem_url, atualizado_em
+      codigo,
+      referencia,
+      nome,
+      nome_abreviado,
+      codigo_barra,
+      tamanho,
+      marca,
+      superficie,
+      m2_caixa,
+      peso_caixa,
+      caixas_pallet,
+      m2_pallet,
+      peso_pallet,
+      fora_linha,
+      url_produto,
+      id_site,
+      imagem_url,
+      atualizado_em
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `,
-  [
-    item.cod_produto,
-    item.prd_referencia || null,
-    item.dsc_item || null,
-    item.dsc_abreviado || null,
-    item.it_cbarra || null,
-    item.dsc_tamanho_produtos || null,
-    item.dsc_marca || null,
-    item.dsc_esp_superficie || null,
-    item.prd_m2_caixa || null,
-    item.it_peso_bru || null,
-    item.prd_cx_pallet || null,
-    item.prd_m2_pallet || null,
-    item.peso_caixa || null,
-    item.it_fora_linha ? 1 : 0,
-    item.prd_link_produto || null,
-    item.id_site || null,
-    item.prd_link_img_produto || null
-  ]);
+    [
+      item.cod_produto,
+      item.prd_referencia || null,
+      item.dsc_item || null,
+      item.dsc_abreviado || null,
+      item.it_cbarra || null,
+      item.dsc_tamanho_produtos || null,
+      item.dsc_marca || null,
+      item.dsc_esp_superficie || null,
+      item.prd_m2_caixa || null,
+      item.it_peso_bru || null,
+      item.prd_cx_pallet || null,
+      item.prd_m2_pallet || null,
+      item.peso_caixa || null,
+      item.it_fora_linha ? 1 : 0,
+      item.prd_link_produto || null,
+      item.id_site || null,
+      item.prd_link_img_produto || null
+    ]
+  );
 }
 
-// ---------------------------------------------------------------------
-// SINCRONIZAR LISTA COMPLETA
-// ---------------------------------------------------------------------
+//
+// Sincronizar LISTA
+//
 async function sincronizarLista() {
   await registrarLog({
     telefone: null,
@@ -74,9 +89,9 @@ async function sincronizarLista() {
   return lista;
 }
 
-// ---------------------------------------------------------------------
-// SINCRONIZAR DETALHES APENAS DE NOVOS
-// ---------------------------------------------------------------------
+//
+// Sincronizar DETALHES DE CADA PRODUTO
+//
 async function sincronizarDetalhes() {
   await registrarLog({
     telefone: null,
@@ -116,7 +131,7 @@ async function sincronizarDetalhes() {
         info: {}
       });
 
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 350)); // evitar 429
 
     } catch (e) {
       await registrarLog({
