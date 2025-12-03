@@ -102,6 +102,7 @@ async function sincronizarDetalhes() {
     info: {}
   });
 
+  console.log('Sincronizando DETALHES da Delta...')
   const lista = await listaCompleta();
   const existentes = await getProdutosExistentes();
 
