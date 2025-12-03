@@ -16,8 +16,8 @@ async function consultaCliente(termo) {
 
     rows.forEach((c, i) => {
         msg += `*${i+1}.* ${c.nome}\n`;
-        msg += `📞 ${c.telefone}\n`;
-        msg += `Limite Crédito: ${c.limitecredito}\n\n`;
+        msg += `📞 Telefone:  ${c.telefone}\n`;
+        msg += `💳 Limite: R$ ${c.limitecredito}\n\n`;
     });
 
     return msg;
@@ -25,11 +25,11 @@ async function consultaCliente(termo) {
 
 async function consultaProduto(termo) {
     const { rows } = await pool.query(`
-        SELECT nome, referenciafabrica, produto
-        FROM produtos
+        SELECT nome, vrcusto, vrvenda, estoque, precopromocao
+        FROM vp_jlf_whatsapp_consulta_produto
         WHERE nome ILIKE $1
         LIMIT 15
-    `, [`%${termo}%`]);
+    `, [`${termo}%`]);
 
     if (!rows.length) return "❗ Nenhum produto encontrado.";
 
@@ -37,8 +37,10 @@ async function consultaProduto(termo) {
 
     rows.forEach((p, i) => {
         msg += `*${i+1}.* ${p.nome}\n`;
-        msg += `🔹 Ref: ${p.referenciafabrica}\n`;
-        msg += `🔹 Cód Interno: ${p.produto}\n\n`;
+        msg += `💰 Custo: R$ ${p.vrcusto}\n`;
+        msg += `🏷️ Venda: R$ ${p.vrvenda}\n`;
+        msg += `💲 *Preço Promo: R$  ${p.precopromocao}\n`;
+        msg += `📦 Estoque: ${p.estoque}\n\n`;
     });
 
     return msg;
