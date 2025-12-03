@@ -28,7 +28,7 @@ module.exports = async function imagemHandler(client, msg, usuario) {
 
         console.log("🔍 Código lido:", qr);
 
-        const textoHandler = require("./textoHandler");
+        const textoHandler = require("./texto");
 
         // ============================================================
         // 🔥 1 — EAN (12 ou 13 dígitos)
