@@ -74,7 +74,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             const tokenUsuario = usuario.token || null;
 
             // Detalhes via API Delta (sempre puxa atual)
-            const det = await deltaApi.detalhes(row.cod_produto, tokenUsuario);
+            const det = await deltaApi.detalhes(row.codigo, tokenUsuario);
 
             const texto = await montarMensagem(det);
 
@@ -134,7 +134,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         if (!lista.length) return msg.reply("❌ Nenhum produto encontrado.");
 
-        if (lista.length === 1) return buscarPorCodigo(lista[0].cod_produto);
+        if (lista.length === 1) return buscarPorCodigo(lista[0].codigo);
 
         let texto = "📦 *Produtos encontrados:*\n\n";
         lista.forEach((p, i) => texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`);
