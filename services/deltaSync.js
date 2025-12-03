@@ -90,56 +90,87 @@ async function sincronizarLista() {
 
   return lista;
 }
+// 🔎 Busca apenas os produtos que ainda NÃO têm detalhes
+function getProdutosSemDetalhes() {
+  return new Promise(resolve => {
+    db.all(
+      `
+      SELECT codigo
+      FROM produtos
+      WHERE 
+        (tamanho IS NULL OR tamanho = '')
+        OR (codigo_barra IS NULL OR codigo_barra = '')
+        OR (nome_abreviado IS NULL OR nome_abreviado = '')
+      `,
+      (err, rows) => {
+        if (err) {
+          console.error("Erro ao buscar produtos sem detalhes:", err);
+          return resolve([]);
+        }
+        resolve(rows.map(r => r.codigo));
+      }
+    );
+  });
+}
 
 async function sincronizarDetalhes() {
-  await registrarLog({
-    telefone: null,
-    tipo: "SYNC_DELTA",
-    mensagem: "Sincronizando DETALHES...",
-    info: {}
-  });
+  const codigos = await getProdutosSemDetalhes();
 
-  console.log('Sincronizando DETALHES da Delta...');
+  if (!codigos.length) {
+    console.log("Nenhum produto pendente de detalhes.");
+    await registrarLog({
+      tipo: "SYNC_DELTA_DETALHES",
+      mensagem: "Nenhum produto pendente de detalhes",
+      info: { quantidade: 0 }
+    });
+    return 0;
+  }
 
-  const lista = await listaCompleta();
-  const existentes = await getProdutosExistentes(); // lista de códigos já salvos
+  console.log(`Sincronizando DETALHES da Delta para ${codigos.length} produtos...`);
 
-  // listaCompleta() retorna "cod_produto"
-  const novos = lista.filter(p => !existentes.includes(p.cod_produto));
+  let atualizados = 0;
 
-  console.log(`Produtos novos para detalhar: ${novos.length}`);
-
-  for (const item of novos) {
-    const cod = item.cod_produto;
-
+  for (const cod of codigos) {
     try {
       const det = await detalhes(cod);
 
-      // extrair id_site da URL
-      let id_site = null;
-      if (det.prd_link_produto) {
-        const match = det.prd_link_produto.match(/id=(\d+)/);
-        if (match) id_site = match[1];
-      }
+      // Ajusta os campos conforme o que a API retorna
+      // (ajusta os nomes conforme seu JSON real)
+      const {
+        referencia,
+        nome,
+        nome_abreviado,
+        codigo_barra,
+        tamanho
+      } = det;
 
-      salvarProduto({
-        ...det,
-        id_site,
-        prd_link_img_produto: det.prd_link_img_produto
+      await new Promise((resolve, reject) => {
+        db.run(
+          `
+          UPDATE produtos
+          SET referencia = ?, nome = ?, nome_abreviado = ?, codigo_barra = ?, tamanho = ?
+          WHERE codigo = ?
+          `,
+          [referencia, nome, nome_abreviado, codigo_barra, tamanho, cod],
+          function (err) {
+            if (err) return reject(err);
+            resolve();
+          }
+        );
       });
+
+      atualizados++;
 
       await registrarLog({
-        telefone: null,
-        tipo: "SYNC_DELTA",
+        tipo: "SYNC_DELTA_DETALHE_OK",
         mensagem: `Detalhes sincronizados para ${cod}`,
-        info: {}
+        info: { codigo: cod }
       });
-
-      await new Promise(r => setTimeout(r, 350)); // evitar 429
 
     } catch (e) {
+      console.error(`Erro ao detalhar ${cod}:`, e.message);
+
       await registrarLog({
-        telefone: null,
         tipo: "SYNC_DELTA_ERRO",
         mensagem: `Erro ao sincronizar ${cod}`,
         info: { erro: e.message }
@@ -147,8 +178,10 @@ async function sincronizarDetalhes() {
     }
   }
 
-  return novos;
+  console.log(`Detalhes atualizados para ${atualizados} produtos.`);
+  return atualizados;
 }
+
 
 module.exports = {
   sincronizarLista,
