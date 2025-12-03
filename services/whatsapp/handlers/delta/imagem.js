@@ -54,7 +54,7 @@ module.exports = async function imagemHandler(client, msg, usuario) {
         const id = extrairIdDoQR(qr);
         if (id) {
             const row = await sqlGet(
-                `SELECT * FROM produtos WHERE id_site = ?`,
+                `SELECT * FROM produtos WHERE id_site like ?`,
                 [id]
             );
 
