@@ -1,4 +1,4 @@
-const db = require('../../../db/db');
+const db = require('../../../../db/db');
 const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../logService");
