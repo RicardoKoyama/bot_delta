@@ -11,6 +11,8 @@ const db = require('../../../db/db');
 function getUserAPI(whatsappNumber) {
   const number = whatsappNumber.replace('@c.us', '').replace(/\D/g, '');
 
+  console.log('Telefone ', number);
+
   return new Promise((resolve) => {
     db.get(
       `SELECT api FROM usuarios WHERE telefone = ? LIMIT 1`,
