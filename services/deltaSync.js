@@ -106,10 +106,10 @@ async function sincronizarDetalhes() {
   const lista = await listaCompleta();
   const existentes = await getProdutosExistentes();
 
-  const novos = lista.filter(p => !existentes.includes(p.cod_produto));
+  const novos = lista.filter(p => !existentes.includes(p.codigo));
 
   for (const item of novos) {
-    const cod = item.cod_produto;
+    const cod = item.codigo;
 
     try {
       const det = await detalhes(cod);
