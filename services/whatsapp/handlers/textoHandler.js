@@ -76,6 +76,8 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             // Detalhes via API Delta (sempre puxa atual)
             const det = await deltaApi.detalhes(row.codigo, tokenUsuario);
 
+            console.log(det);
+
             const texto = await montarMensagem(det);
 
             // Tenta enviar com imagem
