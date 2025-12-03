@@ -14,7 +14,7 @@ async function getUserAPI(whatsappNumber) {
     const { rows } = await pool.query(`
         SELECT api
         FROM usuarios
-        WHERE whatsapp = $1
+        WHERE telefone = $1
         LIMIT 1
     `, [number]);
 
