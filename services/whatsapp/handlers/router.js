@@ -6,19 +6,24 @@ const msiTexto = require('./msi/texto');
 const msiImagem = require('./msi/imagem');
 const msiMain   = require('./msi/main');
 
-const { pool } = require('../../../services/dbService');
+const db = require('../../../db/db');
 
-async function getUserAPI(whatsappNumber) {
-    const number = whatsappNumber.replace('@c.us', '').replace(/\D/g, '');
+function getUserAPI(whatsappNumber) {
+  const number = whatsappNumber.replace('@c.us', '').replace(/\D/g, '');
 
-    const { rows } = await pool.query(`
-        SELECT api
-        FROM usuarios
-        WHERE telefone = $1
-        LIMIT 1
-    `, [number]);
-
-    return rows[0]?.api?.toUpperCase() || null;
+  return new Promise((resolve) => {
+    db.get(
+      `SELECT api FROM usuarios WHERE telefone = ? LIMIT 1`,
+      [number],
+      (err, row) => {
+        if (err) {
+          console.error('Erro ao buscar API do usuário no SQLite:', err);
+          return resolve(null);
+        }
+        resolve(row?.api ? row.api.toUpperCase() : null);
+      }
+    );
+  });
 }
 
 async function handleTexto(message, accountId, client) {
