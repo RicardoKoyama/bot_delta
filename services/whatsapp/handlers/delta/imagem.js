@@ -55,8 +55,8 @@ module.exports = async function imagemHandler(client, msg, usuario) {
         console.log('ID / QR', id, qr);
         if (id) {
             const row = await sqlGet(
-                `SELECT * FROM produtos WHERE id_site like ?`,
-                [id]
+                `SELECT * FROM produtos WHERE url_produto = ?`,
+                [qr]
             );
 
             if (!row) {
