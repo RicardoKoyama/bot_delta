@@ -156,7 +156,23 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
     // Referência só número (ex: 2225)
     if (/^\d{3,5}$/.test(termo)) {
-        return buscarPorReferencia(termo);
+        const lista = await sqlAll(
+            "SELECT codigo, nome FROM produtos WHERE codigo LIKE ? LIMIT 10",
+            [`${termo}%`]
+        );
+
+        if (!lista.length)
+            return msg.reply("❌ Nenhum produto encontrado.");
+
+        if (lista.length === 1)
+            return buscarPorReferencia(lista[0].codigo);
+
+        let texto = "📦 *Produtos encontrados:*\n\n";
+        lista.forEach((p, i) => {
+            texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`;
+        });
+
+        return msg.reply(texto);
     }
 
     // Nome
