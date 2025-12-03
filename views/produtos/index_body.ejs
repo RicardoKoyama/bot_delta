@@ -21,15 +21,16 @@
 
   <% produtos.forEach(p => { %>
     <tr>
-      <td><%= p.cod_produto %></td>
+      <td><%= p.codigo %></td>
       <td><%= p.nome_abreviado %></td>
       <td><%= p.id_site %></td>
 
       <td>
-        <a href="/produtos/detalhes/<%= p.cod_produto %>" class="action-link">
+        <a href="/produtos/detalhes/<%= p.codigo %>" class="action-link">
           <i class="fa-solid fa-magnifying-glass"></i> Ver
         </a>
       </td>
     </tr>
+
   <% }) %>
 </table>

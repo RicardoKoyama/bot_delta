@@ -17,23 +17,24 @@ router.get('/nova', ensureAuth, (req, res) => {
 
 // SALVAR NOVA / EDITADA
 router.post('/salvar', ensureAuth, (req, res) => {
-  const { id, nome, numero } = req.body;
+  const { id, nome, telefone } = req.body;
 
   if (!id) {
     // NOVA
     db.run(`
-      INSERT INTO contas_whatsapp (nome, numero, status, updated_at)
-      VALUES (?, ?, ?, datetime('now'))
-    `, [nome, numero, 'desconectado'], () => {
+      INSERT INTO contas_whatsapp (nome, telefone, status, atualizado_em)
+      VALUES (?, ?, ?, datetime('now','localtime'))
+    `, [nome, telefone, 'desconectado'], () => {
       res.redirect('/contas');
     });
+
   } else {
     // EDITAR
     db.run(`
       UPDATE contas_whatsapp
-      SET nome=?, numero=?, updated_at=datetime('now')
+      SET nome=?, telefone=?, atualizado_em=datetime('now','localtime')
       WHERE id=?
-    `, [nome, numero, id], () => {
+    `, [nome, telefone, id], () => {
       res.redirect('/contas');
     });
   }

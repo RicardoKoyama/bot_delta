@@ -20,8 +20,8 @@ module.exports = async function imagemHandler(client, msg, usuario) {
 
         console.log("📸 Imagem salva em:", filepath);
 
+        // Decodifica EAN ou QR Delta
         const qr = await decodeCodigo(filepath);
-
         if (!qr) {
             return msg.reply("❌ Não consegui ler nenhum código dessa imagem.");
         }
@@ -31,57 +31,54 @@ module.exports = async function imagemHandler(client, msg, usuario) {
         const textoHandler = require("./textoHandler");
 
         // ============================================================
-        // 🔥 1 — Se é EAN (12 a 13 dígitos)
+        // 🔥 1 — EAN (12 ou 13 dígitos)
         // ============================================================
         if (/^\d{12,13}$/.test(qr.trim())) {
             const ean = qr.trim();
-            console.log("📦 Código reconhecido como EAN:", ean);
 
             const row = await sqlGet(
-                `SELECT * FROM produtos_delta WHERE ean = ?`,
+                `SELECT * FROM produtos WHERE codigo_barra = ?`,
                 [ean]
             );
 
             if (!row) {
-                return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
+                return msg.reply("❌ Nenhum produto encontrado para esse código de barras.");
             }
 
-            return textoHandler(client, msg, row.cod_produto, usuario);
+            return textoHandler(client, msg, row.codigo, usuario);
         }
 
         // ============================================================
-        // 🔥 2 — QR Delta contendo id=1234
+        // 🔥 2 — QR Delta contendo id=XXXX
         // ============================================================
         const id = extrairIdDoQR(qr);
         if (id) {
-            console.log("🆔 ID extraído do QR:", id);
-
             const row = await sqlGet(
-                `SELECT * FROM produtos_delta WHERE id_site = ?`,
+                `SELECT * FROM produtos WHERE id_site = ?`,
                 [id]
             );
 
             if (!row) {
-                return msg.reply("❌ Produto não encontrado no banco local.");
+                return msg.reply("❌ Nenhum produto encontrado para esse QR Code.");
             }
 
-            return textoHandler(client, msg, row.cod_produto, usuario);
+            return textoHandler(client, msg, row.codigo, usuario);
         }
 
         // ============================================================
-        // 🔥 3 — Caso não seja EAN e nem QR Delta
+        // 🔥 3 — Código inválido
         // ============================================================
         return msg.reply("❌ Código não reconhecido como EAN ou QR válido.");
 
     } catch (err) {
         console.error("❌ Erro no handler de imagem:", err);
-        return msg.reply("❌ Erro ao processar imagem.");
+        return msg.reply("❌ Erro ao processar a imagem.");
     }
 };
 
 
 // ============================================================
-// Função — Decode com Inlite CLI
+// Decodificação via Inlite CLI
 // ============================================================
 function decodeCodigo(filepath) {
     return new Promise((resolve) => {
@@ -113,19 +110,11 @@ function decodeCodigo(filepath) {
     });
 }
 
-
-// ============================================================
-// Extrai id=XXXX do QR da Delta
-// ============================================================
 function extrairIdDoQR(texto) {
     const m = String(texto).match(/id=(\d+)/i);
     return m ? m[1] : null;
 }
 
-
-// ============================================================
-// Query SQLite
-// ============================================================
 function sqlGet(sql, params) {
     return new Promise(resolve => {
         db.get(sql, params, (err, row) => resolve(row || null));

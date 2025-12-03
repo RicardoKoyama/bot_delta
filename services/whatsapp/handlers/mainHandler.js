@@ -4,48 +4,35 @@ const imagemHandler = require('./imagemHandler');
 const usuarioService = require("../../usuariosService");
 const { registrarLog } = require("../../logService");
 
+// Normaliza número (LID → telefone real)
 async function normalizarNumero(raw) {
-  if (!raw) return "";
-
-  // Limpa o ID
-  const lid = raw
+  const clean = (raw || "")
     .replace("@c.us", "")
     .replace("@s.whatsapp.net", "")
     .replace("@lid", "")
     .replace(/\D/g, "");
 
-  // Se já for número real (começa com 55 e tem 12 ou 13 dígitos)
-  if (lid.startsWith("55") && lid.length >= 12 && lid.length <= 13) {
-    return lid;
-  }
+  if (clean.startsWith("55") && clean.length >= 12) return clean;
 
-  // Buscar no banco o LID associado
-  return new Promise((resolve) => {
+  // Procura no lid_map novo
+  return new Promise(resolve => {
     db.get(
-      `SELECT phone_number FROM whatsapp_lid_map WHERE lid = ? LIMIT 1`,
-      [lid],
+      `SELECT telefone FROM whatsapp_lid_map WHERE lid = ? LIMIT 1`,
+      [clean],
       (err, row) => {
-        if (row && row.phone_number) {
-          resolve(row.phone_number);
-        } else {
-          resolve(lid); // fallback
-        }
+        resolve(row?.telefone || clean);
       }
     );
   });
 }
 
-
-// FUNÇÃO PRINCIPAL
 module.exports = async function mainHandler(client, msg) {
   const from = await normalizarNumero(msg.from);
   const body = (msg.body || "").trim();
   const type = msg.type;
 
-
-  // Log básico da mensagem recebida
   registrarLog({
-    phone: from.replace(/\D/g, ""),
+    telefone: from,
     tipo: type,
     mensagem: body,
     info: {}
@@ -53,7 +40,6 @@ module.exports = async function mainHandler(client, msg) {
 
   console.log(`📩 Mensagem recebida de ${from}: [${type}] ${body}`);
 
-  // Validar usuário
   const usuario = await buscarUsuarioAutorizado(from);
   if (!usuario) {
     console.log(`❌ Não autorizado: ${from}`);
@@ -64,7 +50,6 @@ module.exports = async function mainHandler(client, msg) {
   const handled = await tentarCadastroViaComando(msg, usuario);
   if (handled) return;
 
-  // Tipos
   if (type === "chat") return textoHandler(client, msg, body, usuario);
   if (type === "image") return imagemHandler(client, msg, usuario);
 
@@ -72,17 +57,30 @@ module.exports = async function mainHandler(client, msg) {
 };
 
 // --------------------------------------------------------
-// CADASTRO VIA WHATSAPP
+// BUSCAR AUTORIZADO — versão nova
+// --------------------------------------------------------
+function buscarUsuarioAutorizado(numero) {
+  return new Promise(resolve => {
+    db.get(
+      `SELECT * FROM usuarios 
+       WHERE telefone = ?
+       AND ativo = 1
+       AND date(validade) >= date('now')`,
+      [numero],
+      (err, row) => resolve(row || null)
+    );
+  });
+}
+
+// --------------------------------------------------------
+// CADASTRAR VIA WHATSAPP
 // --------------------------------------------------------
 async function tentarCadastroViaComando(msg, usuarioAdmin) {
-  let texto = (msg.body || "").trim().toUpperCase();
 
+  if (!usuarioAdmin.administrador) return false;
+
+  const texto = (msg.body || "").trim().toUpperCase();
   if (!texto.startsWith("CADASTRAR ")) return false;
-
-  if (!usuarioAdmin.is_admin) {
-    await msg.reply("❌ Você não tem permissão para cadastrar usuários.");
-    return true;
-  }
 
   const partes = texto.replace("CADASTRAR", "").trim().split("/");
   if (partes.length < 2) {
@@ -103,14 +101,13 @@ async function tentarCadastroViaComando(msg, usuarioAdmin) {
     });
 
     registrarLog({
-      phone: msg.from.replace(/\D/g, ""),
+      telefone: msg.from.replace(/\D/g, ""),
       tipo: "cadastro_comando",
       mensagem: msg.body,
       info: { nome, telefone }
     });
 
     await msg.reply(`✅ Usuário *${nome}* cadastrado com sucesso!`);
-
   } catch (e) {
     console.error(e);
     await msg.reply("❌ Erro ao cadastrar usuário.");
@@ -118,32 +115,3 @@ async function tentarCadastroViaComando(msg, usuarioAdmin) {
 
   return true;
 }
-
-// --------------------------------------------------------
-// BUSCAR AUTORIZADO
-// --------------------------------------------------------
-function buscarUsuarioAutorizado(numero) {
-  return new Promise((resolve) => {
-    const tel = numero.replace(/\D/g, "");
-
-    db.get(
-      `SELECT * FROM usuarios
-       WHERE phone_number = ?
-         AND is_active = 1
-         AND date(validade) >= date('now')`,
-      [tel],
-      (err, row) => resolve(row || null)
-    );
-  });
-}
-
-function extrairNumero(raw) {
-  if (!raw) return "";
-
-  return raw
-    .replace("@c.us", "")
-    .replace("@s.whatsapp.net", "")
-    .replace("@lid", "")
-    .replace(/\D/g, "");
-}
-

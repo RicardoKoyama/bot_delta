@@ -10,7 +10,7 @@
   <tr>
     <th>ID</th>
     <th>Nome</th>
-    <th>Número</th>
+    <th>Telefone</th>
     <th>Status</th>
     <th>Atualizado</th>
     <th>Ações</th>
@@ -20,19 +20,19 @@
     <tr>
       <td><%= c.id %></td>
       <td><%= c.nome %></td>
-      <td><%= c.numero %></td>
+      <td><%= c.telefone %></td>
 
       <td>
         <% if (c.status === 'ativo') { %>
           <span class="status success">ATIVO</span>
-        <% } else if (c.status === 'pendente') { %>
-          <span class="status warning">PENDENTE</span>
+        <% } else if (c.status === 'qr') { %>
+          <span class="status warning">QR PENDENTE</span>
         <% } else { %>
           <span class="status danger">DESCONECTADO</span>
         <% } %>
       </td>
 
-      <td><%= c.updated_at %></td>
+      <td><%= c.atualizado_em %></td>
 
       <td>
         <a href="/contas/editar/<%= c.id %>" class="action-link">

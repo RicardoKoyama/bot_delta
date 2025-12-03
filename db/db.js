@@ -6,41 +6,41 @@ const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
   db.run(`
-    CREATE TABLE IF NOT EXISTS produtos_delta (
+    CREATE TABLE IF NOT EXISTS produtos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      cod_produto TEXT UNIQUE,
-      cod_base TEXT,
-      prd_referencia TEXT,
+      codigo TEXT UNIQUE,
+      referencia TEXT,
       nome TEXT,
       nome_abreviado TEXT,
-      cod_barra TEXT,
+      codigo_barra TEXT,
       tamanho TEXT,
       marca TEXT,
       superficie TEXT,
-      m2_caixa NUMERIC,
-      peso_caixa NUMERIC,
-      cx_pallet INTEGER,
-      m2_pallet NUMERIC,
-      peso_pallet NUMERIC,
+      m2_caixa REAL,
+      peso_caixa REAL,
+      caixas_pallet INTEGER,
+      m2_pallet REAL,
+      peso_pallet REAL,
       fora_linha INTEGER DEFAULT 0,
       url_produto TEXT,
       id_site INTEGER,
-      img_url TEXT,
-      atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+      imagem_url TEXT,
+      atualizado_em TEXT
+    );
   `);
 
   db.run(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT,
-      telefone TEXT,
+      telefone TEXT UNIQUE,
       validade TEXT,
       ativo INTEGER DEFAULT 0,
       administrador INTEGER DEFAULT 0,
+      id_mensagem INTEGER,
       token TEXT,
       api TEXT
-    )
+    );
   `);
 
   db.run(`
@@ -49,27 +49,37 @@ db.serialize(() => {
       nome TEXT,
       telefone TEXT,
       status TEXT,
-      atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+      qr_data TEXT,
+      atualizado_em TEXT
+    );
   `);
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS logs_bot (
+    CREATE TABLE IF NOT EXISTS logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       data_hora TEXT,
       telefone TEXT,
       tipo TEXT,
       mensagem TEXT,
       info TEXT
-    )
+    );
   `);
 
   db.run(`
-      CREATE TABLE IF NOT EXISTS contas_whatsapp_lid_map (
-        lid TEXT PRIMARY KEY,
-        telefone TEXT NOT NULL,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+    CREATE TABLE IF NOT EXISTS whatsapp_lid_map (
+      lid TEXT PRIMARY KEY,
+      telefone TEXT NOT NULL,
+      criado_em TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE mensagem_whatsapp (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao TEXT,
+      mensagem TEXT NOT NULL,
+      padrao BOOLEAN DEFAULT FALSE
+    );
   `);
 
 });

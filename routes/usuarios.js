@@ -27,26 +27,24 @@ router.get('/novo', ensureAuth, (req, res) => {
   });
 });
 
-// SALVAR
 router.post('/salvar', ensureAuth, (req, res) => {
+  const { id, nome, telefone, validade,
+          ativo, administrador, id_mensagem, token } = req.body;
 
-  const { id, nome, phone_number, validade, is_active,
-          is_admin, id_mensagem, token } = req.body;
-
-  const ativo = is_active === 'on' ? 1 : 0;
-  const admin = is_admin === 'on' ? 1 : 0;
+  const ativoInt = ativo === 'on' ? 1 : 0;
+  const adminInt = administrador === 'on' ? 1 : 0;
   const msg = id_mensagem || null;
   const tok = token || null;
 
   if (!id) {
-    // NOVO USUÁRIO (fluxo existente do service)
+
     usuarioService
       .cadastrarUsuario({
         nome,
-        telefone: phone_number,
+        telefone,
         dias: 15,
-        ativo,
-        admin,
+        ativo: ativoInt,
+        admin: adminInt,
         id_mensagem: msg,
         token: tok
       })
@@ -54,17 +52,19 @@ router.post('/salvar', ensureAuth, (req, res) => {
       .catch(() => res.redirect('/usuarios'));
 
   } else {
-    // UPDATE
-    db.run(
-      `UPDATE usuarios
-       SET nome=?, phone_number=?, validade=?, is_active=?, is_admin=?, 
-           id_mensagem=?, token=?
-       WHERE id=?`,
-      [nome, phone_number, validade, ativo, admin, msg, tok, id],
+
+    db.run(`
+      UPDATE usuarios
+      SET nome=?, telefone=?, validade=?, ativo=?, administrador=?,
+          id_mensagem=?, token=?
+      WHERE id=?`,
+      [nome, telefone, validade, ativoInt, adminInt, msg, tok, id],
       () => res.redirect('/usuarios')
     );
+
   }
 });
+
 
 // EDITAR
 router.get('/editar/:id', ensureAuth, (req, res) => {

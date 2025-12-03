@@ -8,15 +8,15 @@ router.get('/', ensureAuth, (req, res) => {
   const busca = req.query.busca ? `%${req.query.busca}%` : null;
 
   let sql =
-    "SELECT cod_produto, nome_abreviado, img_url, id_site FROM produtos_delta";
+    "SELECT codigo, nome_abreviado, imagem_url, id_site FROM produtos";
   let params = [];
 
   if (busca) {
-    sql += " WHERE nome_abreviado LIKE ? OR cod_produto LIKE ?";
+    sql += " WHERE nome_abreviado LIKE ? OR codigo LIKE ?";
     params.push(busca, busca);
   }
 
-  sql += " ORDER BY cod_produto LIMIT 200";
+  sql += " ORDER BY codigo LIMIT 100";
 
   db.all(sql, params, (err, rows) => {
 
@@ -71,7 +71,19 @@ router.get('/detalhes/:codigo', ensureAuth, async (req, res) => {
     console.log("🔎 Consulta detalhes Delta:", url);
 
     const resposta = await axios.get(url, { headers });
-    const detalhes = resposta.data;
+    const det = resposta.data;
+
+    const detalhes = {
+      codigo: det.cod_produto,
+      nome_abreviado: det.dsc_abreviado,
+      tamanho: det.dsc_tamanho_produtos,
+      superficie: det.dsc_esp_superficie,
+      marca: det.dsc_marca,
+      estoque: det.sdo_saldo_estoque,
+      m2_caixa: det.prd_m2_caixa,
+      url_produto: det.prd_link_produto,
+      imagem_url: det.prd_link_img_produto
+    };
 
     res.render("produtos/detalhes", { detalhes });
 

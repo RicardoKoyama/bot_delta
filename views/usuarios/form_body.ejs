@@ -11,22 +11,22 @@
          value="<%= usuario ? usuario.nome : '' %>" required />
 
   <label class="form-label">Telefone</label>
-  <input type="text" name="phone_number" class="form-input"
-         value="<%= usuario ? usuario.phone_number : '' %>" required />
+  <input type="text" name="telefone" class="form-input"
+         value="<%= usuario ? usuario.telefone : '' %>" required />
 
   <label class="form-label">Validade</label>
   <input type="date" name="validade" class="form-input"
          value="<%= usuario ? usuario.validade : '' %>" required />
 
   <label class="form-label">Ativo?</label>
-  <input type="checkbox" name="is_active"
-         <%= usuario && usuario.is_active ? 'checked' : '' %> />
+  <input type="checkbox" name="ativo"
+         <%= usuario && usuario.ativo ? 'checked' : '' %> />
 
   <br><br>
 
   <label class="form-label">Administrador?</label>
-  <input type="checkbox" name="is_admin"
-         <%= usuario && usuario.is_admin ? 'checked' : '' %> />
+  <input type="checkbox" name="administrador"
+         <%= usuario && usuario.administrador ? 'checked' : '' %> />
 
   <br><br>
 

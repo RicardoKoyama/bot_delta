@@ -23,18 +23,18 @@
     <tr>
       <td><%= u.id %></td>
       <td><%= u.nome %></td>
-      <td><%= u.phone_number %></td>
+      <td><%= u.telefone %></td>
       <td><%= u.validade %></td>
 
       <td>
-        <% if (u.is_active) { %>
+        <% if (u.ativo) { %>
           <span class="status success">ATIVO</span>
         <% } else { %>
           <span class="status danger">INATIVO</span>
         <% } %>
       </td>
 
-      <td><%= u.is_admin ? "Sim" : "Não" %></td>
+      <td><%= u.administrador ? "Sim" : "Não" %></td>
       <td><%= u.mensagem_descricao || "-" %></td>
       <td><%= u.token ? "🔑" : "-" %></td>
 

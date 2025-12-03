@@ -13,7 +13,7 @@ router.get("/", ensureAuth, (req, res) => {
   const params = [];
 
   if (phone) {
-    where += " AND phone LIKE ?";
+    where += " AND telefone LIKE ?";
     params.push(`%${phone}%`);
   }
 
@@ -34,10 +34,10 @@ router.get("/", ensureAuth, (req, res) => {
 
   const sql = `
     SELECT *
-    FROM logs_bot
+    FROM logs
     ${where}
     ORDER BY id DESC
-    LIMIT 200
+    LIMIT 100
   `;
 
   db.all(sql, params, (err, rows) => {

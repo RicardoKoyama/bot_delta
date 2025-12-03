@@ -1,212 +1,168 @@
 const db = require('../../../db/db');
-const axios = require('axios');
 const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../logService");
 
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
-    // ================================
-    // FUNÇÕES DE BANCO
-    // ================================
     function sqlGet(sql, params) {
         return new Promise(resolve => {
-            db.get(sql, params, (err, row) => {
-                resolve(row || null);
-            });
+            db.get(sql, params, (err, row) => resolve(row || null));
         });
     }
 
     function sqlAll(sql, params) {
         return new Promise(resolve => {
-            db.all(sql, params, (err, rows) => {
-                resolve(rows || []);
-            });
+            db.all(sql, params, (err, rows) => resolve(rows || []));
         });
     }
 
-    // ================================
-    // BUSCAR MENSAGEM PERSONALIZADA
-    // ================================
+    // --------------------------------------------------
+    // MENSAGEM CUSTOMIZADA
+    // --------------------------------------------------
     async function obterMensagemCustomizada(usuario, det) {
 
         let mensagem = null;
 
-        // 1 – se o usuário tem id_mensagem, tenta buscar
         if (usuario.id_mensagem) {
             const row = await sqlGet(
                 "SELECT mensagem FROM mensagem_whatsapp WHERE id = ?",
                 [usuario.id_mensagem]
             );
-
-            if (row && row.mensagem) {
-                mensagem = row.mensagem;
-            }
+            if (row?.mensagem) mensagem = row.mensagem;
         }
 
-        // 2 – se não tiver, busca padrão
         if (!mensagem) {
-            const rowPadrao = await sqlGet(
+            const row = await sqlGet(
                 "SELECT mensagem FROM mensagem_whatsapp WHERE padrao = 1 LIMIT 1",
                 []
             );
-
-            if (rowPadrao && rowPadrao.mensagem) {
-                mensagem = rowPadrao.mensagem;
-            }
+            if (row?.mensagem) mensagem = row.mensagem;
         }
 
-        // 3 – se não tiver nada nem padrão, usa texto fixo atual
         if (!mensagem) {
             mensagem =
-                `📌 *${det.dsc_item}*\n\n` +
-                `*Referência:* ${det.cod_produto}\n` +
-                `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
-                `*Superfície:* ${det.dsc_esp_superficie}\n` +
-                `*Marca:* ${det.dsc_marca}\n` +
-                `*Estoque:* ${det.sdo_saldo_estoque}\n` +
-                `*m² por Caixa:* ${det.prd_m2_caixa}\n\n` +
-                `${det.prd_link_produto}`;
+                `📌 *${det.nome}*\n\n` +
+                `*Referência:* ${det.codigo}\n` +
+                `*Tamanho:* ${det.tamanho}\n` +
+                `*Superfície:* ${det.superficie}\n` +
+                `*Marca:* ${det.marca}\n` +
+                `*m² por Caixa:* ${det.m2_caixa}\n\n` +
+                `${det.url_produto}`;
         }
 
-        // 4 – substituição de variáveis dentro da mensagem
-        mensagem = mensagem
-            .replace(/{{nome}}/gi, det.dsc_item || "")
-            .replace(/{{referencia}}/gi, det.cod_produto || "")
-            .replace(/{{tamanho}}/gi, det.dsc_tamanho_produtos || "")
-            .replace(/{{superficie}}/gi, det.dsc_esp_superficie || "")
-            .replace(/{{marca}}/gi, det.dsc_marca || "")
-            .replace(/{{estoque}}/gi, det.sdo_saldo_estoque || "")
-            .replace(/{{m2_caixa}}/gi, det.prd_m2_caixa || "")
-            .replace(/{{link}}/gi, det.prd_link_produto || "");
-
-        return mensagem;
+        return mensagem
+          .replace(/{{nome}}/gi, det.nome || "")
+          .replace(/{{referencia}}/gi, det.codigo || "")
+          .replace(/{{tamanho}}/gi, det.tamanho || "")
+          .replace(/{{superficie}}/gi, det.superficie || "")
+          .replace(/{{marca}}/gi, det.marca || "")
+          .replace(/{{m2_caixa}}/gi, det.m2_caixa || "")
+          .replace(/{{link}}/gi, det.url_produto || "");
     }
 
 
-    // ================================
-    // RESPOSTA DO PRODUTO
-    // ================================
+    // --------------------------------------------------
+    // ENVIA PRODUTO
+    // --------------------------------------------------
     async function responderProduto(client, msg, row) {
         try {
-
-            // 👇 pega o token do usuário (ou null)
             const tokenUsuario = usuario.token || null;
 
-            // 👇 consulta API Delta com o token dele
-            const det = await deltaApi.detalhes(row.cod_produto, tokenUsuario);
+            const det = await deltaApi.detalhes(row.codigo, tokenUsuario);
 
-            // 👇 gera texto da mensagem (personalizada ou padrão)
             const texto = await obterMensagemCustomizada(usuario, det);
 
             try {
-                const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
+                const media = await MessageMedia.fromUrl(det.imagem_url, { unsafeMime: true });
+
+                await client.sendMessage(msg.from, media, { caption: texto });
 
                 registrarLog({
-                    phone: msg.from.replace(/\D/g, ""),
-                    tipo: "consulta_texto",
+                    telefone: msg.from.replace(/\D/g, ""),
+                    tipo: "consulta",
                     mensagem: body,
                     info: { termo: body }
                 });
 
-                await client.sendMessage(msg.from, media, {
-                    caption: texto
-                });
-
-            } catch (imgErr) {
-                console.log("Erro ao carregar imagem:", imgErr.message);
-                return msg.reply(texto); // fallback sem imagem
+            } catch {
+                return msg.reply(texto);
             }
 
         } catch (e) {
-            console.error("Erro na API Delta:", e.message);
-            return msg.reply("❌ Erro ao consultar produto na API.");
+            console.error("Erro API Delta:", e);
+            return msg.reply("❌ Erro ao consultar a API.");
         }
     }
 
 
-    // ================================
-    // BUSCAS (CD, REF, EAN, NOME)
-    // ================================
-    async function buscarPorCodigo(client, msg, cod) {
-        const row = await sqlGet(`
-            SELECT * FROM produtos_delta 
-            WHERE cod_base = ? OR cod_produto = ?`,
-            [cod, cod]
-        );
 
-        if (!row) return msg.reply("❌ Nenhum produto encontrado.");
+    // --------------------------------------------------
+    // BUSCAS ATUAIS
+    // --------------------------------------------------
+    async function buscarPorCodigo(cod) {
+        const row = await sqlGet(
+            "SELECT * FROM produtos WHERE codigo = ?",
+            [cod]
+        );
+        if (!row) return msg.reply("❌ Produto não encontrado.");
         return responderProduto(client, msg, row);
     }
 
-    async function buscarPorReferencia(client, msg, ref) {
-        ref = ref.trim().toUpperCase();
-        if (!ref.includes('-')) ref += "-A";
-
-        let row = await sqlGet(`
-            SELECT * FROM produtos_delta 
-            WHERE cod_produto = ?`, [ref]);
-
-        if (!row) {
-            const base = ref.split('-')[0];
-            row = await sqlGet(
-                "SELECT * FROM produtos_delta WHERE cod_produto LIKE ? LIMIT 1",
-                [`${base}-%`]
-            );
-        }
-
+    async function buscarPorReferencia(ref) {
+        const row = await sqlGet(
+            "SELECT * FROM produtos WHERE codigo = ?",
+            [ref]
+        );
         if (!row) return msg.reply("❌ Referência não encontrada.");
         return responderProduto(client, msg, row);
     }
 
-    async function buscarPorEAN(client, msg, ean) {
+    async function buscarPorEAN(ean) {
         const row = await sqlGet(
-            "SELECT * FROM produtos_delta WHERE it_cbarra = ?",
+            "SELECT * FROM produtos WHERE codigo_barra = ?",
             [ean]
         );
-
-        if (!row) return msg.reply("❌ Nenhum produto encontrado.");
+        if (!row) return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
         return responderProduto(client, msg, row);
     }
 
-    async function buscarPorNome(client, msg, nome) {
-        const lista = await sqlAll(`
-            SELECT cod_produto, nome_abreviado 
-            FROM produtos_delta
-            WHERE nome_abreviado LIKE ?
-            LIMIT 10
-        `, [`%${nome}%`]);
+    async function buscarPorNome(nome) {
+        const lista = await sqlAll(
+            "SELECT codigo, nome_abreviado FROM produtos WHERE nome_abreviado LIKE ? LIMIT 10",
+            [`%${nome}%`]
+        );
 
         if (!lista.length) return msg.reply("❌ Nenhum produto encontrado.");
-        if (lista.length === 1) return buscarPorReferencia(client, msg, lista[0].cod_produto);
+
+        if (lista.length === 1) return buscarPorReferencia(lista[0].codigo);
 
         let texto = "📦 Produtos encontrados:\n\n";
-        lista.forEach((p, i) => texto += `${i + 1}. *${p.cod_produto}* — ${p.nome_abreviado}\n`);
+        lista.forEach((p, i) => texto += `${i + 1}. *${p.codigo}* — ${p.nome_abreviado}\n`);
 
         return msg.reply(texto);
     }
 
-
-    // ================================
-    // DECISÃO DA BUSCA
-    // ================================
+    // --------------------------------------------------
+    // DECISOR
+    // --------------------------------------------------
     const termo = body.toLowerCase();
 
     if (termo.startsWith("cd ")) {
-        return buscarPorCodigo(client, msg, termo.replace("cd ", "").trim());
-    }
-
-    if (/^\d{3,5}-[a-zA-Z]$/.test(termo)) {
-        return buscarPorReferencia(client, msg, termo.toUpperCase());
+        return buscarPorCodigo(termo.replace("cd ", "").trim());
     }
 
     if (/^\d{13}$/.test(termo)) {
-        return buscarPorEAN(client, msg, termo);
+        return buscarPorEAN(termo);
+    }
+
+    if (/^\d{3,5}-[a-zA-Z]$/.test(termo)) {
+        return buscarPorReferencia(termo.toUpperCase());
     }
 
     if (/^\d{3,5}$/.test(termo)) {
-        return buscarPorReferencia(client, msg, termo);
+        return buscarPorReferencia(termo);
     }
 
-    return buscarPorNome(client, msg, termo);
+    return buscarPorNome(termo);
 };

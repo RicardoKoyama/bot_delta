@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const whatsappManager = require('./services/whatsapp/WhatsAppManager');
 const cron = require("node-cron");
 const { sincronizarLista, sincronizarDetalhes } = require("./services/deltaSync");
-const { registrarLog } = require("./services/logService");  // <-- ADICIONADO
+const { registrarLog } = require("./services/logService");
 
 const app = express();
 

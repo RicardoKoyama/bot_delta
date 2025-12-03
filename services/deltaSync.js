@@ -1,41 +1,44 @@
 const db = require('../db/db');
 const { listaCompleta, detalhes } = require('./deltaApi');
-const { registrarLog } = require("./logService");   // <-- ADICIONADO
+const { registrarLog } = require("./logService");
 
-
+// ---------------------------------------------------------------------
+// PRODUTOS EXISTENTES
+// ---------------------------------------------------------------------
 function getProdutosExistentes() {
   return new Promise(resolve => {
-    db.all("SELECT cod_produto FROM produtos_delta", (err, rows) => {
+    db.all("SELECT codigo FROM produtos", (err, rows) => {
       if (err) return resolve([]);
-      resolve(rows.map(r => r.cod_produto));
+      resolve(rows.map(r => r.codigo));
     });
   });
 }
 
-function salvarBasicos(item) {
+// ---------------------------------------------------------------------
+// SALVAR PRODUTO
+// ---------------------------------------------------------------------
+function salvarProduto(item) {
   db.run(`
-    INSERT OR REPLACE INTO produtos_delta (
-      cod_produto, cod_base, nome, nome_abreviado, ean,
-      prd_referencia, tamanho, marca, superficie, m2_caixa,
-      cx_pallet, m2_pallet, peso_caixa, peso_pallet,
-      fora_linha, url_produto, id_site, img_url, ultima_atualizacao
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    INSERT OR REPLACE INTO produtos (
+      codigo, referencia, nome, nome_abreviado, codigo_barra,
+      tamanho, marca, superficie, m2_caixa, peso_caixa,
+      caixas_pallet, m2_pallet, peso_pallet,
+      fora_linha, url_produto, id_site, imagem_url, atualizado_em
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `,
   [
     item.cod_produto,
-    item.cod_produto.split('-')[0],
-    item.dsc_item,
-    item.dsc_abreviado,
-    item.it_cbarra,
     item.prd_referencia || null,
+    item.dsc_item || null,
+    item.dsc_abreviado || null,
+    item.it_cbarra || null,
     item.dsc_tamanho_produtos || null,
     item.dsc_marca || null,
     item.dsc_esp_superficie || null,
     item.prd_m2_caixa || null,
+    item.it_peso_bru || null,
     item.prd_cx_pallet || null,
     item.prd_m2_pallet || null,
-    item.it_peso_bru || null,
     item.peso_caixa || null,
     item.it_fora_linha ? 1 : 0,
     item.prd_link_produto || null,
@@ -44,26 +47,25 @@ function salvarBasicos(item) {
   ]);
 }
 
-
-// =====================================================================
-// LISTA
-// =====================================================================
+// ---------------------------------------------------------------------
+// SINCRONIZAR LISTA COMPLETA
+// ---------------------------------------------------------------------
 async function sincronizarLista() {
   await registrarLog({
-    phone: null,
+    telefone: null,
     tipo: "SYNC_DELTA",
     mensagem: "Sincronizando LISTA da Delta...",
     info: {}
   });
 
   const lista = await listaCompleta();
-  
+
   for (const item of lista) {
-    salvarBasicos(item);
+    salvarProduto(item);
   }
 
   await registrarLog({
-    phone: null,
+    telefone: null,
     tipo: "SYNC_DELTA",
     mensagem: `Lista atualizada com ${lista.length} itens`,
     info: { total: lista.length }
@@ -72,15 +74,14 @@ async function sincronizarLista() {
   return lista;
 }
 
-
-// =====================================================================
-// DETALHES
-// =====================================================================
+// ---------------------------------------------------------------------
+// SINCRONIZAR DETALHES APENAS DE NOVOS
+// ---------------------------------------------------------------------
 async function sincronizarDetalhes() {
   await registrarLog({
-    phone: null,
+    telefone: null,
     tipo: "SYNC_DELTA",
-    mensagem: "Sincronizando DETALHES (apenas itens novos)...",
+    mensagem: "Sincronizando DETALHES...",
     info: {}
   });
 
@@ -89,35 +90,27 @@ async function sincronizarDetalhes() {
 
   const novos = lista.filter(p => !existentes.includes(p.cod_produto));
 
-  await registrarLog({
-    phone: null,
-    tipo: "SYNC_DELTA",
-    mensagem: `Foram encontrados ${novos.length} novos itens`,
-    info: {}
-  });
-
   for (const item of novos) {
     const cod = item.cod_produto;
 
     try {
       const det = await detalhes(cod);
 
-      // Montar id_site
-      const url = det.prd_link_produto || null;
+      // extrair id_site da URL
       let id_site = null;
-      if (url) {
-        const match = url.match(/id=(\d+)/);
+      if (det.prd_link_produto) {
+        const match = det.prd_link_produto.match(/id=(\d+)/);
         if (match) id_site = match[1];
       }
 
-      salvarBasicos({
+      salvarProduto({
         ...det,
         id_site,
-        img_url: det.prd_link_img_produto
+        prd_link_img_produto: det.prd_link_img_produto
       });
 
       await registrarLog({
-        phone: null,
+        telefone: null,
         tipo: "SYNC_DELTA",
         mensagem: `Detalhes sincronizados para ${cod}`,
         info: {}
@@ -127,20 +120,13 @@ async function sincronizarDetalhes() {
 
     } catch (e) {
       await registrarLog({
-        phone: null,
+        telefone: null,
         tipo: "SYNC_DELTA_ERRO",
-        mensagem: `Erro ao sincronizar detalhes de ${cod}`,
+        mensagem: `Erro ao sincronizar ${cod}`,
         info: { erro: e.message }
       });
     }
   }
-
-  await registrarLog({
-    phone: null,
-    tipo: "SYNC_DELTA",
-    mensagem: "Sincronização de detalhes concluída!",
-    info: {}
-  });
 
   return novos;
 }

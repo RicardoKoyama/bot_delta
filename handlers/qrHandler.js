@@ -8,7 +8,7 @@ async function handleQr(url) {
 
   const row = await new Promise(resolve => {
     db.get(
-      "SELECT * FROM produtos_delta WHERE id_site = ?",
+      "SELECT * FROM produtos WHERE id_site = ?",
       [id],
       (_, row) => resolve(row)
     );
