@@ -1,6 +1,6 @@
 const fs = require("fs");
 const child_process = require("child_process");
-const db = require("../../../db/db");
+const db = require("../../../../db/db");
 
 module.exports = async function imagemHandler(client, msg, usuario) {
     console.log("🖼️ Recebida imagem. Baixando arquivo...");
