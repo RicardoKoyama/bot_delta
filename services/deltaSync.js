@@ -101,31 +101,21 @@ async function sincronizarDetalhes() {
 
   console.log('Sincronizando DETALHES da Delta...');
 
-  // Buscar produtos que ainda NÃO têm detalhes
-  const incompletos = await new Promise(resolve => {
-    db.all(`
-      SELECT codigo FROM produtos
-      WHERE tamanho IS NULL
-         OR marca IS NULL
-         OR superficie IS NULL
-         OR url_produto IS NULL
-         OR imagem_url IS NULL
-    `, (err, rows) => resolve(rows || []));
-  });
+  const lista = await listaCompleta();
+  const existentes = await getProdutosExistentes(); // lista de códigos já salvos
 
-  console.log(`Produtos com detalhes faltando: ${incompletos.length}`);
+  // listaCompleta() retorna "cod_produto"
+  const novos = lista.filter(p => !existentes.includes(p.cod_produto));
 
-  if (!incompletos.length) {
-    console.log("Nenhum detalhe pendente para sincronizar.");
-    return [];
-  }
+  console.log(`Produtos novos para detalhar: ${novos.length}`);
 
-  for (const row of incompletos) {
-    const cod = row.codigo;
+  for (const item of novos) {
+    const cod = item.cod_produto;
 
     try {
       const det = await detalhes(cod);
 
+      // extrair id_site da URL
       let id_site = null;
       if (det.prd_link_produto) {
         const match = det.prd_link_produto.match(/id=(\d+)/);
@@ -145,7 +135,7 @@ async function sincronizarDetalhes() {
         info: {}
       });
 
-      await new Promise(r => setTimeout(r, 350));
+      await new Promise(r => setTimeout(r, 350)); // evitar 429
 
     } catch (e) {
       await registrarLog({
@@ -157,10 +147,8 @@ async function sincronizarDetalhes() {
     }
   }
 
-  return incompletos;
+  return novos;
 }
-
-
 
 module.exports = {
   sincronizarLista,
