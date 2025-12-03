@@ -83,14 +83,16 @@ async function createClient(conta) {
     client.initialize(); // tenta reconectar
   });
 
-  // ----------------------------------------
-  // RECEBIMENTO DE MENSAGENS
-  // ----------------------------------------
   client.on('message', async msg => {
     try {
       const router = require('./handlers/router');
-      //const mainHandler = require('./handlers/mainHandler');
-      await router(client, msg);
+
+      if (msg.type === 'image') {
+        await router.handleImagem(msg, conta.id, client);
+      } else {
+        await router.handleTexto(msg, conta.id, client);
+      }
+
     } catch (err) {
       console.error("Erro no handler:", err);
     }

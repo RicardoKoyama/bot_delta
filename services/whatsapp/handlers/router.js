@@ -6,15 +6,14 @@ const msiTexto = require('./msi/texto');
 const msiImagem = require('./msi/imagem');
 const msiMain   = require('./msi/main');
 
-// 🔥 Aqui você passa o pool para consultar tabela usuarios
-const { pool } = require('../../dbService');
+const { pool } = require('../../../services/dbService');
 
 async function getUserAPI(whatsappNumber) {
     const number = whatsappNumber.replace('@c.us', '').replace(/\D/g, '');
 
     const { rows } = await pool.query(`
-        SELECT api 
-        FROM usuarios 
+        SELECT api
+        FROM usuarios
         WHERE whatsapp = $1
         LIMIT 1
     `, [number]);
