@@ -3,166 +3,182 @@ const deltaApi = require('../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../logService");
 
+// =============================================================================
+// HELPERS SQLITE
+// =============================================================================
+function sqlGet(sql, params) {
+    return new Promise(resolve => {
+        db.get(sql, params, (err, row) => resolve(row || null));
+    });
+}
+
+function sqlAll(sql, params) {
+    return new Promise(resolve => {
+        db.all(sql, params, (err, rows) => resolve(rows || []));
+    });
+}
+
+// =============================================================================
+// HANDLER PRINCIPAL DE TEXTO
+// =============================================================================
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
-    function sqlGet(sql, params) {
-        return new Promise(resolve => {
-            db.get(sql, params, (err, row) => resolve(row || null));
-        });
-    }
+    const termo = (body || "").trim().toLowerCase();
 
-    function sqlAll(sql, params) {
-        return new Promise(resolve => {
-            db.all(sql, params, (err, rows) => resolve(rows || []));
-        });
-    }
+    // -------------------------------------------------------------------------
+    // GERA MENSAGEM CUSTOMIZADA
+    // -------------------------------------------------------------------------
+    async function montarMensagem(det) {
 
-    // --------------------------------------------------
-    // MENSAGEM CUSTOMIZADA
-    // --------------------------------------------------
-    async function obterMensagemCustomizada(usuario, det) {
-
-        let mensagem = null;
-
+        // Template customizado do usuário
         if (usuario.id_mensagem) {
             const row = await sqlGet(
-                "SELECT mensagem FROM mensagem_whatsapp WHERE id = ?",
+                "SELECT texto FROM mensagem_whatsapp WHERE id = ?",
                 [usuario.id_mensagem]
             );
-            if (row?.mensagem) mensagem = row.mensagem;
+            if (row?.texto) return aplicarTemplate(row.texto, det);
         }
 
-        if (!mensagem) {
-            const row = await sqlGet(
-                "SELECT mensagem FROM mensagem_whatsapp WHERE padrao = 1 LIMIT 1",
-                []
-            );
-            if (row?.mensagem) mensagem = row.mensagem;
-        }
+        // Template padrão
+        const padrao = await sqlGet(
+            "SELECT texto FROM mensagem_whatsapp WHERE padrao = 1 LIMIT 1",
+            []
+        );
+        if (padrao?.texto) return aplicarTemplate(padrao.texto, det);
 
-        if (!mensagem) {
-            mensagem =
-                `📌 *${det.nome}*\n\n` +
-                `*Referência:* ${det.codigo}\n` +
-                `*Tamanho:* ${det.tamanho}\n` +
-                `*Superfície:* ${det.superficie}\n` +
-                `*Marca:* ${det.marca}\n` +
-                `*m² por Caixa:* ${det.m2_caixa}\n\n` +
-                `${det.url_produto}`;
-        }
-
-        return mensagem
-          .replace(/{{nome}}/gi, det.nome || "")
-          .replace(/{{referencia}}/gi, det.codigo || "")
-          .replace(/{{tamanho}}/gi, det.tamanho || "")
-          .replace(/{{superficie}}/gi, det.superficie || "")
-          .replace(/{{marca}}/gi, det.marca || "")
-          .replace(/{{m2_caixa}}/gi, det.m2_caixa || "")
-          .replace(/{{link}}/gi, det.url_produto || "");
+        // Sem template → monta texto simples
+        return (
+            `📌 *${det.nome}*\n\n` +
+            `*Referência:* ${det.referencia}\n` +
+            `*Tamanho:* ${det.tamanho}\n` +
+            `*Superfície:* ${det.superficie}\n` +
+            `*Marca:* ${det.marca}\n` +
+            `*m² por Caixa:* ${det.m2_caixa}\n\n` +
+            `${det.url_produto}`
+        );
     }
 
+    // -------------------------------------------------------------------------
+    // APLICA PLACEHOLDERS DO TEMPLATE
+    // -------------------------------------------------------------------------
+    function aplicarTemplate(txt, d) {
+        return txt
+            .replace(/{{nome}}/gi, d.nome || "")
+            .replace(/{{referencia}}/gi, d.referencia || "")
+            .replace(/{{tamanho}}/gi, d.tamanho || "")
+            .replace(/{{superficie}}/gi, d.superficie || "")
+            .replace(/{{marca}}/gi, d.marca || "")
+            .replace(/{{m2_caixa}}/gi, d.m2_caixa || "")
+            .replace(/{{link}}/gi, d.url_produto || "");
+    }
 
-    // --------------------------------------------------
+    // -------------------------------------------------------------------------
     // ENVIA PRODUTO
-    // --------------------------------------------------
-    async function responderProduto(client, msg, row) {
+    // -------------------------------------------------------------------------
+    async function responderProduto(row) {
         try {
             const tokenUsuario = usuario.token || null;
 
-            const det = await deltaApi.detalhes(row.codigo, tokenUsuario);
+            // Detalhes via API Delta (sempre puxa atual)
+            const det = await deltaApi.detalhes(row.cod_produto, tokenUsuario);
 
-            const texto = await obterMensagemCustomizada(usuario, det);
+            const texto = await montarMensagem(det);
 
+            // Tenta enviar com imagem
             try {
-                const media = await MessageMedia.fromUrl(det.imagem_url, { unsafeMime: true });
-
-                await client.sendMessage(msg.from, media, { caption: texto });
-
-                registrarLog({
-                    telefone: msg.from.replace(/\D/g, ""),
-                    tipo: "consulta",
-                    mensagem: body,
-                    info: { termo: body }
-                });
-
+                if (det.img_url) {
+                    const media = await MessageMedia.fromUrl(det.img_url, { unsafeMime: true });
+                    await client.sendMessage(msg.from, media, { caption: texto });
+                } else {
+                    await msg.reply(texto);
+                }
             } catch {
-                return msg.reply(texto);
+                await msg.reply(texto);
             }
 
+            registrarLog({
+                telefone: msg.from.replace(/\D/g, ""),
+                tipo: "consulta",
+                mensagem: body,
+                info: { termo: body }
+            });
+
         } catch (e) {
-            console.error("Erro API Delta:", e);
-            return msg.reply("❌ Erro ao consultar a API.");
+            console.error("❌ Erro API Delta:", e);
+            await msg.reply("❌ Erro ao consultar API.");
         }
     }
 
-
-
-    // --------------------------------------------------
-    // BUSCAS ATUAIS
-    // --------------------------------------------------
+    // -------------------------------------------------------------------------
+    // BUSCAS
+    // -------------------------------------------------------------------------
     async function buscarPorCodigo(cod) {
         const row = await sqlGet(
-            "SELECT * FROM produtos WHERE codigo = ?",
+            "SELECT * FROM delta_produtos WHERE cod_produto = ?",
             [cod]
         );
         if (!row) return msg.reply("❌ Produto não encontrado.");
-        return responderProduto(client, msg, row);
+        return responderProduto(row);
     }
 
     async function buscarPorReferencia(ref) {
         const row = await sqlGet(
-            "SELECT * FROM produtos WHERE codigo = ?",
+            "SELECT * FROM delta_produtos WHERE prd_referencia = ?",
             [ref]
         );
         if (!row) return msg.reply("❌ Referência não encontrada.");
-        return responderProduto(client, msg, row);
+        return responderProduto(row);
     }
 
     async function buscarPorEAN(ean) {
         const row = await sqlGet(
-            "SELECT * FROM produtos WHERE codigo_barra = ?",
+            "SELECT * FROM delta_produtos WHERE cod_barra = ?",
             [ean]
         );
         if (!row) return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
-        return responderProduto(client, msg, row);
+        return responderProduto(row);
     }
 
     async function buscarPorNome(nome) {
         const lista = await sqlAll(
-            "SELECT codigo, nome_abreviado FROM produtos WHERE nome_abreviado LIKE ? LIMIT 10",
+            "SELECT cod_produto, nome_abreviado FROM delta_produtos WHERE nome_abreviado LIKE ? LIMIT 10",
             [`%${nome}%`]
         );
 
         if (!lista.length) return msg.reply("❌ Nenhum produto encontrado.");
 
-        if (lista.length === 1) return buscarPorReferencia(lista[0].codigo);
+        if (lista.length === 1) return buscarPorCodigo(lista[0].cod_produto);
 
-        let texto = "📦 Produtos encontrados:\n\n";
-        lista.forEach((p, i) => texto += `${i + 1}. *${p.codigo}* — ${p.nome_abreviado}\n`);
+        let texto = "📦 *Produtos encontrados:*\n\n";
+        lista.forEach((p, i) => texto += `${i + 1}. *${p.cod_produto}* — ${p.nome_abreviado}\n`);
 
         return msg.reply(texto);
     }
 
-    // --------------------------------------------------
-    // DECISOR
-    // --------------------------------------------------
-    const termo = body.toLowerCase();
+    // -------------------------------------------------------------------------
+    // DECISOR PRINCIPAL
+    // -------------------------------------------------------------------------
 
+    // CD 1234
     if (termo.startsWith("cd ")) {
-        return buscarPorCodigo(termo.replace("cd ", "").trim());
+        return buscarPorCodigo(termo.replace("cd ", "").trim().toUpperCase());
     }
 
+    // EAN 13
     if (/^\d{13}$/.test(termo)) {
         return buscarPorEAN(termo);
     }
 
+    // 1234-A
     if (/^\d{3,5}-[a-zA-Z]$/.test(termo)) {
         return buscarPorReferencia(termo.toUpperCase());
     }
 
+    // Referência só número (ex: 2225)
     if (/^\d{3,5}$/.test(termo)) {
         return buscarPorReferencia(termo);
     }
 
+    // Nome
     return buscarPorNome(termo);
 };
