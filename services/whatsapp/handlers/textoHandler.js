@@ -136,7 +136,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
         if (!lista.length) return msg.reply("❌ Nenhum produto encontrado.");
 
-        if (lista.length === 1) return buscarPorCodigo(lista[0].codigo);
+        if (lista.length === 1) return buscarPorReferencia(lista[0].codigo);
 
         let texto = "📦 *Produtos encontrados:*\n\n";
         lista.forEach((p, i) => texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`);
