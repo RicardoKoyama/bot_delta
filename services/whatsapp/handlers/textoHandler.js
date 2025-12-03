@@ -114,7 +114,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     // -------------------------------------------------------------------------
     async function buscarPorCodigo(cod) {
         const row = await sqlGet(
-            "SELECT * FROM delta_produtos WHERE cod_produto = ?",
+            "SELECT * FROM produtos WHERE codigo = ?",
             [cod]
         );
         if (!row) return msg.reply("❌ Produto não encontrado.");
@@ -123,7 +123,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
     async function buscarPorReferencia(ref) {
         const row = await sqlGet(
-            "SELECT * FROM delta_produtos WHERE prd_referencia = ?",
+            "SELECT * FROM produtos WHERE referencia = ?",
             [ref]
         );
         if (!row) return msg.reply("❌ Referência não encontrada.");
@@ -132,7 +132,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
     async function buscarPorEAN(ean) {
         const row = await sqlGet(
-            "SELECT * FROM delta_produtos WHERE cod_barra = ?",
+            "SELECT * FROM produtos WHERE codigo_barra = ?",
             [ean]
         );
         if (!row) return msg.reply("❌ Nenhum produto encontrado para esse EAN.");
@@ -141,7 +141,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
     async function buscarPorNome(nome) {
         const lista = await sqlAll(
-            "SELECT cod_produto, nome_abreviado FROM delta_produtos WHERE nome_abreviado LIKE ? LIMIT 10",
+            "SELECT codigo, nome FROM produtos WHERE nome LIKE ? LIMIT 10",
             [`%${nome}%`]
         );
 
