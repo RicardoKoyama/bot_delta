@@ -91,9 +91,7 @@ async function sincronizarLista() {
   return lista;
 }
 
-//
-// Sincronizar DETALHES DE CADA PRODUTO
-//
+
 async function sincronizarDetalhes() {
   await registrarLog({
     telefone: null,
@@ -102,14 +100,18 @@ async function sincronizarDetalhes() {
     info: {}
   });
 
-  console.log('Sincronizando DETALHES da Delta...')
-  const lista = await listaCompleta();
-  const existentes = await getProdutosExistentes();
+  console.log('Sincronizando DETALHES da Delta...');
 
+  const lista = await listaCompleta();
+  const existentes = await getProdutosExistentes(); // lista de códigos já salvos
+
+  // listaCompleta() retorna "cod_produto"
   const novos = lista.filter(p => !existentes.includes(p.cod_produto));
 
+  console.log(`Produtos novos para detalhar: ${novos.length}`);
+
   for (const item of novos) {
-    const cod = item.codigo;
+    const cod = item.cod_produto;
 
     try {
       const det = await detalhes(cod);
@@ -148,6 +150,7 @@ async function sincronizarDetalhes() {
 
   return novos;
 }
+
 
 module.exports = {
   sincronizarLista,
