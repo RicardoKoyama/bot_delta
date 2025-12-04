@@ -1,10 +1,17 @@
 const textoHandler  = require('./texto');
 const imagemHandler = require('./imagem');
+const ajudaHandler  = require('./ajuda');
 
 async function handleTexto(message, accountId, client) {
   try {
-    const body = message.body || '';
+    const body = (message.body || '').trim().toUpperCase();
+
+    if (body === "AJUDA" || body === "*AJUDA") {
+        return ajudaHandler(client, message, {});
+    }
+
     return textoHandler(client, message, body, {}); 
+
   } catch (err) {
     console.error('[DELTA main] erro em handleTexto:', err);
     return message.reply('❌ Erro ao processar mensagem (DELTA).');
