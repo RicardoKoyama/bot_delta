@@ -24,13 +24,19 @@ async function gerarFaturamento(periodoTexto) {
         [dataInicio, dataFim]
     );
 
+    const rowsAnon = rows.map((item, index) => ({
+        ...item,
+        local_original: item.local,
+        local: `Empresa ${index + 1}`
+    }));
+
     // 3) Gerar texto bonito
-    const texto = buildMensagem(rows, dataInicio, dataFim);
+    const texto = buildMensagem(rowsAnon, dataInicio, dataFim);
 
     // 4) Gerar gráfico (buffer)
     let buffer = null;
     if (rows.length > 0) {
-        buffer = await gerarGraficoPizza(rows, "Faturamento por Local", "local");
+        buffer = await gerarGraficoPizza(rowsAnon, "Faturamento por Local", "local");
     }
 
     return { texto, buffer };
