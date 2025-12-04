@@ -16,18 +16,17 @@ function formatarNome(nome) {
     .join(" ");
 }
 
-// --- Gera mensagem de boas-vindas com API + comandos ---
 async function gerarMensagemBoasVindas(nome, api) {
   const nomeFmt = formatarNome(nome);
 
-  // Buscar dados da API escolhida
+  // Buscar dados da API
   const infoApi = await new Promise((resolve, reject) => {
     db.get("SELECT * FROM apis WHERE nome = ?", [api], (err, row) =>
       err ? reject(err) : resolve(row)
     );
   });
 
-  // Montagem da mensagem
+  // Lista de comandos formatada
   let comandosLista = "";
 
   if (infoApi?.comandos) {
@@ -40,17 +39,18 @@ async function gerarMensagemBoasVindas(nome, api) {
   return `
 Olá *${nomeFmt}* 👋
 
-🎉 *Seja bem-vindo ao BOT da Koyama Tecnologia!*
+Seja muito bem-vindo ao *BOT da Koyama Tecnologia*!  
 
-Você selecionou a API: *${api}*  
-Aqui estão os comandos disponíveis:
+📌 *API Selecionada:* ${api}
 
+🛠 *Comandos disponíveis nesta API:*
 ${comandosLista}
 
-Seu acesso é válido por *15 dias* para testes.  
-Qualquer dúvida estou à disposição! 🚀
-`;
+🕒 *Período de teste:* 15 dias  
+Durante esse período, você poderá explorar todas as funções de automação,
+consultas inteligentes e integrações que oferecemos.  `;
 }
+
 
 // --- Cadastrar usuário no banco ---
 function cadastrarUsuario({ nome, telefone, email, api, dias = 15, ativo = 1, admin = 0 }) {
