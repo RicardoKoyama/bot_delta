@@ -36,7 +36,7 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/contas', contasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
-app.use("/", cadastroSiteRoutes);
+app.use("/cadastro-site", cadastroSiteRoutes);
 
 const cors = require("cors");
 app.use(cors());
