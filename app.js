@@ -10,6 +10,18 @@ const { registrarLog } = require("./services/logService");
 
 const app = express();
 
+const cors = require("cors");
+
+app.use(cors({
+  origin: [
+    "https://www.koyamatecnologia.com.br",
+    "https://koyamatecnologia.com.br",
+    "https://koyamatecnologia.pages.dev"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -38,10 +50,6 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/contas', contasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
-
-
-const cors = require("cors");
-app.use(cors());
 
 whatsappManager.iniciarTodas();
 
