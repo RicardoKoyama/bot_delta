@@ -6,19 +6,18 @@ const whatsappManager = require("../services/whatsapp/WhatsAppManager");
 
 router.post("/cadastro-site", async (req, res) => {
   try {
-
-    
-
     const { nome, telefone, email, api } = req.body;
 
     if (!nome || !telefone || !email || !api) {
       return res.status(400).json({ erro: "Campos obrigatórios faltando." });
     }
 
-    // Verifica API
+    // Verifica API ativa
     const infoApi = await new Promise((resolve, reject) => {
-      db.get("SELECT * FROM apis WHERE nome = ? AND ativa = 1", [api], (err, row) =>
-        err ? reject(err) : resolve(row)
+      db.get(
+        "SELECT * FROM apis WHERE nome = ? AND ativa = 1",
+        [api],
+        (err, row) => (err ? reject(err) : resolve(row))
       );
     });
 
@@ -26,7 +25,7 @@ router.post("/cadastro-site", async (req, res) => {
       return res.status(400).json({ erro: "API inválida ou inativa." });
     }
 
-    // Cadastrar usuário
+    // Cadastro do usuário no banco
     const novo = await usuarioService.cadastrarUsuario({
       nome,
       telefone,
@@ -37,11 +36,12 @@ router.post("/cadastro-site", async (req, res) => {
       admin: 0
     });
 
-    // Gerar mensagem personalizada
-    const mensagem = await usuarioService.gerarMensagemBoasVindas(novo.nome, api);
+    // ⛔ NÃO enviar boas-vindas aqui.
+    // ❗ Enviar SOMENTE a mensagem de validação
 
-    // Envio WhatsApp direto (igual seus handlers)
-    await whatsappManager.enviarMensagem(novo.numero, mensagem);
+    const msgValidacao = usuarioService.gerarMensagemValidacao(novo.numero);
+
+    await whatsappManager.enviarMensagem(novo.numero, msgValidacao);
 
     return res.json({ sucesso: true });
 
