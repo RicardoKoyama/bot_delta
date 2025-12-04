@@ -1,12 +1,15 @@
 const { pool } = require('../../../../../services/dbService');
-const { createCanvas } = require('canvas');
-const fs = require('fs');
+const { gerarGraficoPizza } = require('./graphUtils'); 
+const { MessageMedia } = require('whatsapp-web.js');
 
+/* ============================================================
+   FUNÇÃO PRINCIPAL: gera texto + gráfico
+============================================================ */
 async function gerarFaturamento(periodoTexto) {
     // 1) Interpretar datas
     const { dataInicio, dataFim } = parsePeriodo(periodoTexto);
 
-    // 2) Buscar dados reais no banco
+    // 2) Consultar dados reais
     const { rows } = await pool.query(
         `
         SELECT 
@@ -21,145 +24,96 @@ async function gerarFaturamento(periodoTexto) {
         [dataInicio, dataFim]
     );
 
-    // 3) Gerar imagem com os dados
-    const filePath = await gerarImagemFaturamento(rows, dataInicio, dataFim);
+    // 3) Gerar texto bonito
+    const texto = buildMensagem(rows, dataInicio, dataFim);
 
-    return filePath;
+    // 4) Gerar gráfico (buffer)
+    let buffer = null;
+    if (rows.length > 0) {
+        buffer = await gerarGraficoPizza(rows, "Faturamento por Local", "local");
+    }
+
+    return { texto, buffer };
 }
 
-/* ---------------------------------------------------------------
-   FUNÇÃO: interpretar o período enviado pelo usuário
------------------------------------------------------------------*/
+/* ============================================================
+   FORMATAÇÃO DE TEXTO
+============================================================ */
+function buildMensagem(lista, ini, fim) {
+    const periodo = formatBR(ini) + (ini !== fim ? ` até ${formatBR(fim)}` : "");
+
+    let msg = `🔍 *RESULTADOS DA CONSULTA*\n📅 Período: ${periodo}\n\n`;
+
+    if (lista.length === 0) {
+        msg += "Nenhum dado encontrado.";
+        return msg;
+    }
+
+    lista.forEach((item) => {
+        msg += `*${item.local.trim()}*\n`;
+        msg += `💰 Faturamento: R$ ${item.faturamento}\n`;
+        msg += `📦 Saídas: ${item.saidas}\n\n`;
+    });
+
+    return msg;
+}
+
+/* ============================================================
+   INTERPRETAÇÃO DO PERÍODO
+============================================================ */
 function parsePeriodo(texto) {
+    texto = texto.trim().toUpperCase();
     const hoje = new Date();
     const ontem = new Date();
     ontem.setDate(hoje.getDate() - 1);
 
-    texto = texto.trim().toUpperCase();
+    if (texto === "HOJE") return fix(hoje, hoje);
+    if (texto === "ONTEM") return fix(ontem, ontem);
 
-    // HOJE
-    if (texto === "HOJE") {
-        const d = formatISO(hoje);
-        return { dataInicio: d, dataFim: d };
-    }
-
-    // ONTEM
-    if (texto === "ONTEM") {
-        const d = formatISO(ontem);
-        return { dataInicio: d, dataFim: d };
-    }
-
-    // Mais de uma data? Separar
-    const partes = texto.split(" ").filter(x => x);
+    const partes = texto.split(" ").filter(Boolean);
 
     if (partes.length === 1) {
-        const unica = parseDataFlex(partes[0]);
-        return { dataInicio: unica, dataFim: unica };
+        const dt = parseDataFlex(partes[0]);
+        return { dataInicio: dt, dataFim: dt };
     }
 
     if (partes.length === 2) {
-        const ini = parseDataFlex(partes[0]);
-        const fim = parseDataFlex(partes[1]);
-        return { dataInicio: ini, dataFim: fim };
+        return {
+            dataInicio: parseDataFlex(partes[0]),
+            dataFim: parseDataFlex(partes[1])
+        };
     }
 
-    throw new Error("Formato inválido. Use: FAT HOJE | FAT 15 | FAT 10/01 | FAT 01/01/2025 31/01/2025");
+    throw new Error("Período inválido.");
 }
 
-/* Conversão flexível de datas */
-function parseDataFlex(d) {
-    const hoje = new Date();
-    const partes = d.split("/");
+function fix(a, b) {
+    return {
+        dataInicio: a.toISOString().slice(0,10),
+        dataFim: b.toISOString().slice(0,10)
+    };
+}
 
+function parseDataFlex(str) {
+    const hoje = new Date();
+    const partes = str.split("/");
     let dia, mes, ano;
 
     if (partes.length === 1) {
         dia = partes[0].padStart(2, "0");
         mes = String(hoje.getMonth() + 1).padStart(2, "0");
-        ano = String(hoje.getFullYear());
+        ano = hoje.getFullYear();
     } else if (partes.length === 2) {
         dia = partes[0].padStart(2, "0");
         mes = partes[1].padStart(2, "0");
-        ano = String(hoje.getFullYear());
-    } else if (partes.length === 3) {
+        ano = hoje.getFullYear();
+    } else {
         dia = partes[0].padStart(2, "0");
         mes = partes[1].padStart(2, "0");
         ano = partes[2];
-    } else {
-        throw new Error("Data inválida.");
     }
 
     return `${ano}-${mes}-${dia}`;
-}
-
-function formatISO(dateObj) {
-    return dateObj.toISOString().slice(0, 10);
-}
-
-/* ---------------------------------------------------------------
-   GERAR IMAGEM DO RELATÓRIO
------------------------------------------------------------------*/
-async function gerarImagemFaturamento(rows, dataInicio, dataFim) {
-    const height = 300 + rows.length * 40;
-    const width = 1100;
-
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext("2d");
-
-    // fundo branco
-    ctx.fillStyle = "#FFF";
-    ctx.fillRect(0, 0, width, height);
-
-    // título
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 36px Arial";
-    ctx.fillText("FATURAMENTO POR EMPRESA", 30, 50);
-
-    ctx.font = "22px Arial";
-    ctx.fillText(`Período: ${formatBR(dataInicio)} até ${formatBR(dataFim)}`, 30, 100);
-
-    // Cabeçalho
-    let y = 150;
-    ctx.font = "bold 22px Arial";
-    ctx.fillText("Empresa", 30, y);
-    ctx.fillText("Vendas (R$)", 350, y);
-    ctx.fillText("Vendas (Qtde)", 750, y);
-
-    ctx.beginPath();
-    ctx.moveTo(20, y + 10);
-    ctx.lineTo(1080, y + 10);
-    ctx.stroke();
-
-    // linhas
-    let totalFat = 0;
-    let totalSai = 0;
-    y += 40;
-    ctx.font = "20px Arial";
-
-    rows.forEach(r => {
-        const fatNum = Number(String(r.faturamento).replace(/\./g, '').replace('.', ','));
-
-        ctx.fillText(r.local, 30, y);
-        ctx.fillText(r.faturamento, 350, y);
-        ctx.fillText(r.saidas, 750, y);
-
-        totalFat += fatNum;
-        totalSai += Number(r.saidas);
-
-        y += 40;
-    });
-
-    // Totalização
-    ctx.font = "bold 24px Arial";
-    ctx.fillText("TOTAL", 30, y + 30);
-    ctx.fillText(totalFat.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), 350, y + 30);
-    ctx.fillText(String(totalSai), 750, y + 30);
-
-    // Salva arquivo
-    const file = `/tmp/faturamento_${Date.now()}.png`;
-    fs.writeFileSync(file, canvas.toBuffer("image/png"));
-
-    return file;
 }
 
 function formatBR(dt) {

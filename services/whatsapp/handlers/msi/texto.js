@@ -47,10 +47,17 @@ async function consultaProduto(termo) {
 }
 
 async function consultaFaturamento(periodo, message, client) {
-    const path = await gerarFaturamento(periodo);
-    
-    const media = MessageMedia.fromFilePath(path);
-    return client.sendMessage(message.from, media, { caption: "📊 FATURAMENTO" });
+    const { texto, buffer } = await gerarFaturamento(periodo);
+
+    // 1️⃣ Envia texto da consulta
+    await client.sendMessage(message.from, texto);
+
+    // 2️⃣ Envia gráfico (se houver)
+    if (buffer) {
+        const base64 = buffer.toString("base64");
+        const media = new MessageMedia("image/png", base64, "grafico.png");
+        await client.sendMessage(message.from, media);
+    }
 }
 
 module.exports = {
