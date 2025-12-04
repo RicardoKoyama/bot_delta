@@ -38,6 +38,41 @@ class WhatsAppManager {
   getClientByName(nome) {
     return this.clientsByName[nome] || null;
   }
+
+  async enviarMensagem(numero, mensagem, idConta = null) {
+    try {
+      // Escolher cliente ativo
+      let client = null;
+
+      if (idConta) {
+        client = this.clients[idConta];
+      } else {
+        const ids = Object.keys(this.clients);
+        if (!ids.length) {
+          throw new Error("Nenhuma conta WhatsApp ativa.");
+        }
+        client = this.clients[ids[0]];
+      }
+
+      if (!client) throw new Error("Cliente WhatsApp não encontrado.");
+
+      // Normalizar número
+      const chatId = numero.replace(/\D/g, "") + "@c.us";
+
+      // Enviar
+      await client.sendMessage(chatId, mensagem);
+
+      console.log("📤 Mensagem enviada com sucesso para:", chatId);
+      return true;
+
+    } catch (err) {
+      console.error("❌ Erro ao enviar mensagem:", err);
+      return false;
+    }
+  }
+
 }
+
+
 
 module.exports = new WhatsAppManager();

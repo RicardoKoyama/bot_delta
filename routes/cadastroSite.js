@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db/db");
 const usuarioService = require("../services/usuariosService");
+const whatsappManager = require("../services/whatsapp/WhatsAppManager");
 
-// --- ROTA DO CADASTRO PELO SITE ---
 router.post("/cadastro-site", async (req, res) => {
   try {
     const { nome, telefone, email, api } = req.body;
@@ -12,7 +12,7 @@ router.post("/cadastro-site", async (req, res) => {
       return res.status(400).json({ erro: "Campos obrigatórios faltando." });
     }
 
-    // Verifica se API existe
+    // Verifica API
     const infoApi = await new Promise((resolve, reject) => {
       db.get("SELECT * FROM apis WHERE nome = ? AND ativa = 1", [api], (err, row) =>
         err ? reject(err) : resolve(row)
@@ -23,7 +23,7 @@ router.post("/cadastro-site", async (req, res) => {
       return res.status(400).json({ erro: "API inválida ou inativa." });
     }
 
-    // 📌 Cadastra usuário no banco
+    // Cadastrar usuário
     const novo = await usuarioService.cadastrarUsuario({
       nome,
       telefone,
@@ -34,15 +34,11 @@ router.post("/cadastro-site", async (req, res) => {
       admin: 0
     });
 
-    // 📌 Gera mensagem personalizada
+    // Gerar mensagem personalizada
     const mensagem = await usuarioService.gerarMensagemBoasVindas(novo.nome, api);
 
-    // 📌 Insere mensagem na fila jlf_whatsapp ou envia direto
-    db.run(
-      `INSERT INTO jlf_whatsapp (numero, mensagem)
-       VALUES (?, ?)`,
-      [novo.numero, mensagem]
-    );
+    // Envio WhatsApp direto (igual seus handlers)
+    await whatsappManager.enviarMensagem(novo.numero, mensagem);
 
     return res.json({ sucesso: true });
 

@@ -15,7 +15,6 @@ router.get('/login', (req, res) => {
 router.post('/login', (req, res) => {
   const { usuario, senha } = req.body;
 
-  // login fixo temporário — depois vamos colocar no SQLite
   if (usuario === process.env.ADMIN_USER && senha === process.env.ADMIN_PASS) {
     req.session.user = { usuario };
     return res.redirect('/');
