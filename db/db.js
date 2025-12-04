@@ -40,7 +40,7 @@ db.serialize(() => {
       id_mensagem INTEGER,
       token TEXT,
       api TEXT,
-      email TEXT;
+      email TEXT
     );
   `);
 
