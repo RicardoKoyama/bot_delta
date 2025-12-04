@@ -6,6 +6,9 @@ const whatsappManager = require("../services/whatsapp/WhatsAppManager");
 
 router.post("/cadastro-site", async (req, res) => {
   try {
+
+    console.log("💡 ROTA /cadastro-site CARREGADA");
+    
     const { nome, telefone, email, api } = req.body;
 
     if (!nome || !telefone || !email || !api) {
