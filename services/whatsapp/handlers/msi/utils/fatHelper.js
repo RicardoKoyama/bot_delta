@@ -1,4 +1,4 @@
-const { pool } = require('../../../../services/dbService');
+const { pool } = require('../../../../../services/dbService');
 const { createCanvas } = require('canvas');
 const fs = require('fs');
 
