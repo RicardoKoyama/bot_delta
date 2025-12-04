@@ -39,7 +39,7 @@ async function consultaProduto(termo) {
         msg += `*${i+1}.* ${p.nome}\n`;
         msg += `💰 Custo: R$ ${p.vrcusto}\n`;
         msg += `🏷️ Venda: R$ ${p.vrvenda}\n`;
-        msg += `💲 *Preço Promo: R$  ${p.precopromocao}\n`;
+        msg += `💲 Preço Promo: R$  ${p.precopromocao}\n`;
         msg += `📦 Estoque: ${p.estoque}\n\n`;
     });
 

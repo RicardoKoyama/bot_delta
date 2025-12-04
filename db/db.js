@@ -39,7 +39,8 @@ db.serialize(() => {
       administrador INTEGER DEFAULT 0,
       id_mensagem INTEGER,
       token TEXT,
-      api TEXT
+      api TEXT,
+      email TEXT;
     );
   `);
 
@@ -81,6 +82,17 @@ db.serialize(() => {
       padrao BOOLEAN DEFAULT FALSE
     );
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS apis (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      descricao TEXT,
+      comandos TEXT,
+      ativa INTEGER DEFAULT 1
+    );
+  `);
+  
 
 });
 
