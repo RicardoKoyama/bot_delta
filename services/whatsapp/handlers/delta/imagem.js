@@ -11,7 +11,7 @@ module.exports = async function imagemHandler(client, msg, usuario) {
       return msg.reply("❌ Não consegui baixar a imagem.");
     }
 
-    msg.reply("🔎 Lendo código da imagem...");
+    //msg.reply("🔎 Lendo código da imagem...");
 
     const result = await decodeImage(media);
 
