@@ -113,7 +113,7 @@ async function gerarImagemFaturamento(rows, dataInicio, dataFim) {
     // título
     ctx.fillStyle = "#000";
     ctx.font = "bold 36px Arial";
-    ctx.fillText("FATURAMENTO POR LOCAL", 30, 50);
+    ctx.fillText("FATURAMENTO POR EMPRESA", 30, 50);
 
     ctx.font = "22px Arial";
     ctx.fillText(`Período: ${formatBR(dataInicio)} até ${formatBR(dataFim)}`, 30, 100);
@@ -121,9 +121,9 @@ async function gerarImagemFaturamento(rows, dataInicio, dataFim) {
     // Cabeçalho
     let y = 150;
     ctx.font = "bold 22px Arial";
-    ctx.fillText("Local", 30, y);
-    ctx.fillText("Faturamento (R$)", 350, y);
-    ctx.fillText("Saídas", 750, y);
+    ctx.fillText("Empresa", 30, y);
+    ctx.fillText("Vendas (R$)", 350, y);
+    ctx.fillText("Vendas (Qtde)", 750, y);
 
     ctx.beginPath();
     ctx.moveTo(20, y + 10);
@@ -137,7 +137,7 @@ async function gerarImagemFaturamento(rows, dataInicio, dataFim) {
     ctx.font = "20px Arial";
 
     rows.forEach(r => {
-        const fatNum = Number(String(r.faturamento).replace(/\./g, '').replace(',', '.'));
+        const fatNum = Number(String(r.faturamento).replace(/\./g, '').replace('.', ','));
 
         ctx.fillText(r.local, 30, y);
         ctx.fillText(r.faturamento, 350, y);
