@@ -31,12 +31,14 @@ const produtosRoutes = require('./routes/produtos');
 const logsRoutes = require('./routes/logs');
 const cadastroSiteRoutes = require("./routes/cadastroSite");
 
+app.use("/", cadastroSiteRoutes);
+
 app.use('/', painelRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/contas', contasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
-app.use("/cadastro-site", cadastroSiteRoutes);
+
 
 const cors = require("cors");
 app.use(cors());
