@@ -1,25 +1,32 @@
+// services/whatsapp/WhatsAppManager.js
 const db = require('../../db/db');
 const createClient = require('./createClient');
 
 class WhatsAppManager {
   constructor() {
-    this.clients = {};      // clients[id]
+    this.clients = {};       // clients[id]
     this.clientsByName = {}; // clients["BOT_1"]
   }
 
+  // Inicia todas as contas cadastradas em contas_whatsapp
   async iniciarTodas() {
-    db.all("SELECT * FROM contas_whatsapp", async (err, contas) => {
+    db.all('SELECT * FROM contas_whatsapp', async (err, contas) => {
       if (err) {
-        console.error("Erro ao carregar contas_whatsapp:", err);
+        console.error('Erro ao carregar contas_whatsapp:', err);
         return;
       }
 
       for (const conta of contas) {
-        await this.iniciarConta(conta);
+        try {
+          await this.iniciarConta(conta);
+        } catch (e) {
+          console.error(`Erro ao iniciar conta ${conta.nome}:`, e);
+        }
       }
     });
   }
 
+  // Inicia uma conta específica
   async iniciarConta(conta) {
     console.log(`🚀 Iniciando conta: ${conta.nome}`);
 
@@ -39,9 +46,13 @@ class WhatsAppManager {
     return this.clientsByName[nome] || null;
   }
 
+  /**
+   * Envia mensagem para um número.
+   * número em qualquer formato (com +, espaços, etc) → apenas dígitos + "@c.us"
+   */
   async enviarMensagem(numero, mensagem, idConta = null) {
     try {
-      // Escolher cliente ativo
+      // escolhe cliente ativo
       let client = null;
 
       if (idConta) {
@@ -49,30 +60,29 @@ class WhatsAppManager {
       } else {
         const ids = Object.keys(this.clients);
         if (!ids.length) {
-          throw new Error("Nenhuma conta WhatsApp ativa.");
+          throw new Error('Nenhuma conta WhatsApp ativa.');
         }
         client = this.clients[ids[0]];
       }
 
-      if (!client) throw new Error("Cliente WhatsApp não encontrado.");
+      if (!client) {
+        throw new Error('Cliente WhatsApp não encontrado.');
+      }
 
-      // Normalizar número
-      const chatId = numero.replace(/\D/g, "") + "@c.us";
+      // normaliza número
+      const apenasDigitos = String(numero).replace(/\D/g, '');
+      const chatId = `${apenasDigitos}@c.us`;
 
-      // Enviar
+      // envia mensagem
       await client.sendMessage(chatId, mensagem);
 
-      console.log("📤 Mensagem enviada com sucesso para:", chatId);
+      console.log('📤 Mensagem enviada com sucesso para:', chatId);
       return true;
-
     } catch (err) {
-      console.error("❌ Erro ao enviar mensagem:", err);
+      console.error('❌ Erro ao enviar mensagem:', err);
       return false;
     }
   }
-
 }
-
-
 
 module.exports = new WhatsAppManager();

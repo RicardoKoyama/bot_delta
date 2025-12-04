@@ -1,10 +1,10 @@
+// services/whatsapp/createClient.js
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const path = require('path');
 const qrcode = require('qrcode');
 const db = require('../../db/db');
 
 async function createClient(conta) {
-
   const sessionDir = path.join(__dirname, '../../sessions', `conta_${conta.id}`);
 
   const client = new Client({
@@ -26,17 +26,28 @@ async function createClient(conta) {
   // ----------------------------------------
   // QR CODE GERADO
   // ----------------------------------------
-  client.on('qr', async qr => {
-    const qrBase64 = await qrcode.toDataURL(qr);
+  client.on('qr', async (qr) => {
+    try {
+      const qrBase64 = await qrcode.toDataURL(qr);
 
-    db.run(
-      `UPDATE contas_whatsapp 
-       SET status=?, qr_data=?, atualizado_em=datetime('now','localtime') 
-       WHERE id=?`,
-      ['qr', qrBase64, conta.id]
-    );
+      db.run(
+        `UPDATE contas_whatsapp 
+           SET status = ?, 
+               qr_data = ?, 
+               atualizado_em = datetime('now','localtime')
+         WHERE id = ?`,
+        ['qr', qrBase64, conta.id],
+        (err) => {
+          if (err) {
+            console.error('Erro ao salvar QR no banco:', err);
+          }
+        }
+      );
 
-    console.log(`📱 QR gerado para conta ${conta.nome}`);
+      console.log(`📱 QR gerado para conta ${conta.nome}`);
+    } catch (e) {
+      console.error('Erro ao gerar QR base64:', e);
+    }
   });
 
   // ----------------------------------------
@@ -47,43 +58,66 @@ async function createClient(conta) {
 
     db.run(
       `UPDATE contas_whatsapp 
-       SET status='ativo', qr_data=NULL, atualizado_em=datetime('now','localtime') 
-       WHERE id=?`,
-      [conta.id]
+         SET status = 'ativo', 
+             qr_data = NULL, 
+             atualizado_em = datetime('now','localtime') 
+       WHERE id = ?`,
+      [conta.id],
+      (err) => {
+        if (err) {
+          console.error('Erro ao atualizar status da conta para ativo:', err);
+        }
+      }
     );
   });
 
   // ----------------------------------------
   // AUTH FAILURE
   // ----------------------------------------
-  client.on('auth_failure', msg => {
+  client.on('auth_failure', (msg) => {
     console.log(`❌ Falha na conta ${conta.nome}: ${msg}`);
 
     db.run(
       `UPDATE contas_whatsapp 
-       SET status='erro', atualizado_em=datetime('now','localtime') 
-       WHERE id=?`,
-      [conta.id]
+         SET status = 'erro', 
+             atualizado_em = datetime('now','localtime') 
+       WHERE id = ?`,
+      [conta.id],
+      (err) => {
+        if (err) {
+          console.error('Erro ao salvar falha de autenticação:', err);
+        }
+      }
     );
   });
 
   // ----------------------------------------
   // DISCONNECTED
   // ----------------------------------------
-  client.on('disconnected', reason => {
+  client.on('disconnected', (reason) => {
     console.log(`🔴 Conta ${conta.nome} desconectada: ${reason}`);
 
     db.run(
       `UPDATE contas_whatsapp 
-       SET status='desconectado', atualizado_em=datetime('now','localtime') 
-       WHERE id=?`,
-      [conta.id]
+         SET status = 'desconectado', 
+             atualizado_em = datetime('now','localtime') 
+       WHERE id = ?`,
+      [conta.id],
+      (err) => {
+        if (err) {
+          console.error('Erro ao salvar desconexão da conta:', err);
+        }
+      }
     );
 
-    client.initialize(); // tenta reconectar
+    // tenta reconectar
+    client.initialize();
   });
 
-  client.on('message', async msg => {
+  // ----------------------------------------
+  // RECEBIMENTO DE MENSAGENS
+  // ----------------------------------------
+  client.on('message', async (msg) => {
     try {
       const router = require('./handlers/router');
 
@@ -92,9 +126,8 @@ async function createClient(conta) {
       } else {
         await router.handleTexto(msg, conta.id, client);
       }
-
     } catch (err) {
-      console.error("Erro no handler:", err);
+      console.error('Erro no handler de mensagem:', err);
     }
   });
 
