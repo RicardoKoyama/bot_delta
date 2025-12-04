@@ -4,8 +4,6 @@ const db = require("../db/db");
 const usuarioService = require("../services/usuariosService");
 const whatsappManager = require("../services/whatsapp/WhatsAppManager");
 
-console.log("💡 ROTA /cadastro-site CARREGADA");
-
 router.post("/cadastro-site", async (req, res) => {
   try {
 
