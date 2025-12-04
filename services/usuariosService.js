@@ -44,7 +44,7 @@ async function gerarMensagemBoasVindas(nome, api) {
 
   // Buscar dados da API
   const infoApi = await new Promise((resolve, reject) => {
-    db.get("SELECT * FROM apis WHERE nome = ?", [api], (err, row) =>
+    db.get("SELECT * FROM apis WHERE UPPER(nome) = UPPER(?)", [api], (err, row) =>
       err ? reject(err) : resolve(row)
     );
   });
@@ -71,6 +71,8 @@ ${comandosLista}
 
 🕒 *Período de teste:* 15 dias  
 Durante esse período, você poderá explorar nossas automações, consultas inteligentes e integrações avançadas.
+
+➡️ É só enviar a palavra *ajuda* que você verá os comandos disponíveis para consulta.
 `;
 }
 
