@@ -38,6 +38,9 @@ app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
 app.use("/", cadastroSiteRoutes);
 
+const cors = require("cors");
+app.use(cors());
+
 whatsappManager.iniciarTodas();
 
 
