@@ -34,7 +34,6 @@ function formatarEstoque(valor) {
     });
 }
 
-
 // ============================================================
 // Handler principal
 // ============================================================
@@ -46,13 +45,12 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     const loteDetectado = msg._data?.loteDetectado || null;
 
     // -------------------------------------------------------------------------
-    // GERA MENSAGEM CUSTOMIZADA
+    // MONTAR MENSAGEM CUSTOMIZADA
     // -------------------------------------------------------------------------
     async function montarMensagem(det) {
 
         const estoqueFmt = formatarEstoque(det.sdo_saldo_estoque);
 
-        // 🔥 Texto básico com estoque formatado
         let textoBase =
             `📌 *${det.dsc_item}*\n\n` +
             `*Referência:* ${det.cod_produto}\n` +
@@ -63,14 +61,10 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             `*m² por Caixa:* ${det.prd_m2_caixa}\n\n` +
             `${det.prd_link_produto}`;
 
-        // 🔥 Se lote veio do DataMatrix → incluir
         if (loteDetectado) {
             textoBase += `\n\n🔸 *Lote detectado:* ${loteDetectado}`;
         }
 
-        // ---------------------------------------------------------------------
-        // Caso usuário tenha template personalizado
-        // ---------------------------------------------------------------------
         if (usuario.id_mensagem) {
             const row = await sqlGet(
                 "SELECT texto FROM mensagem_whatsapp WHERE id = ?",
@@ -79,7 +73,6 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             if (row?.texto) return aplicarTemplate(row.texto, det, estoqueFmt, loteDetectado);
         }
 
-        // Template padrão
         const padrao = await sqlGet(
             "SELECT texto FROM mensagem_whatsapp WHERE padrao = 1 LIMIT 1",
             []
@@ -88,12 +81,11 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
             return aplicarTemplate(padrao.texto, det, estoqueFmt, loteDetectado);
         }
 
-        // Sem template → usa padrão
         return textoBase;
     }
 
     // -------------------------------------------------------------------------
-    // APLICA PLACEHOLDERS DO TEMPLATE
+    // TEMPLATE
     // -------------------------------------------------------------------------
     function aplicarTemplate(txt, d, estoqueFmt, lote) {
         let t = txt
@@ -114,7 +106,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     }
 
     // -------------------------------------------------------------------------
-    // ENVIA PRODUTO
+    // RESPONDER PRODUTO
     // -------------------------------------------------------------------------
     async function responderProduto(row) {
         try {
@@ -123,7 +115,6 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
             const texto = await montarMensagem(det);
 
-            // Tenta enviar imagem
             try {
                 if (det.prd_link_img_produto) {
                     const media = await MessageMedia.fromUrl(det.prd_link_img_produto, { unsafeMime: true });
@@ -149,7 +140,36 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     }
 
     // -------------------------------------------------------------------------
-    // BUSCAS
+    // NOVA FUNÇÃO: BUSCAR POR URL DO PRODUTO (QR DELTA)
+    // -------------------------------------------------------------------------
+    async function buscarPorURL(url) {
+
+        const idMatch = url.match(/id=(\d+)/i);
+        if (!idMatch) return null;
+
+        const id = idMatch[1]; // Ex: 782
+
+        // Tenta achar pelo campo url_produto
+        const row = await sqlGet(
+            "SELECT * FROM produtos WHERE url_produto LIKE ? OR codigo = ? LIMIT 1",
+            [`%${id}%`, id]
+        );
+
+        return row;
+    }
+
+    // -------------------------------------------------------------------------
+    // 1) Se o termo for uma URL, tentamos buscar por ela
+    // -------------------------------------------------------------------------
+    if (termo.startsWith("http")) {
+        const row = await buscarPorURL(termo);
+        if (row) return responderProduto(row);
+
+        return msg.reply("❌ Produto não encontrado para este QR Code.");
+    }
+
+    // -------------------------------------------------------------------------
+    // 2) BUSCAS NORMAIS
     // -------------------------------------------------------------------------
 
     async function buscarPorReferencia(ref) {
