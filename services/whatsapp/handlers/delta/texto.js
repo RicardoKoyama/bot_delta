@@ -4,6 +4,22 @@ const deltaApi = require('../../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../../logService");
 
+async function resolverTelefone(msg) {
+  const rawId = (msg.from || '').split('@')[0].trim();
+
+  // tenta resolver via whatsapp_lid_map
+  const row = await sqlGet(
+    'SELECT telefone FROM whatsapp_lid_map WHERE lid = ? LIMIT 1',
+    [rawId]
+  );
+
+  if (row?.telefone) return row.telefone;
+
+  // fallback: dígitos
+  return rawId.replace(/\D/g, "");
+}
+
+
 // ============================================================
 // Helpers SQLite
 // ============================================================
@@ -87,7 +103,8 @@ async function buscarPrecoProduto(telefone, codigoProduto) {
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
   const termo = (body || "").trim().toLowerCase();
-  const telefone = msg.from.replace(/\D/g, "");
+  const telefone = await resolverTelefone(msg);
+
 
   // -------------------------------------------------------------------------
   // Monta mensagem
