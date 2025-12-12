@@ -117,7 +117,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
       `*Superfície:* ${det.dsc_esp_superficie}\n` +
       `*Marca:* ${det.dsc_marca}\n` +
-      `*m² por caixa:* ${det.prd_m2_caixa}\n`;
+      `*m² por caixa:* ${det.prd_m2_caixa}\n` + 
       `*m² por palete:* ${det.prd_m2_pallet}\n`;
       
 
