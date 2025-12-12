@@ -124,6 +124,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
   // Responder produto
   // -------------------------------------------------------------------------
   async function responderProduto(row) {
+    console.log("New Texto.js");
     try {
       const det = await deltaApi.detalhes(row.codigo);
 
