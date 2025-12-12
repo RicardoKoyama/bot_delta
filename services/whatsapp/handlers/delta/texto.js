@@ -117,20 +117,18 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       `*Tamanho:* ${det.dsc_tamanho_produtos}\n` +
       `*Superfície:* ${det.dsc_esp_superficie}\n` +
       `*Marca:* ${det.dsc_marca}\n` +
-      `*m² por caixa:* ${det.prd_m2_caixa}\n` + 
-      `*m² por palete:* ${det.prd_m2_pallet}\n`;
+      `*Caixa:* ${det.prd_m2_caixa} m²\n` + 
+      `*Palete:* ${det.prd_m2_pallet} m²\n`;
       
 
     // ----------------------------
     // Bloco de preço
     // ----------------------------
     if (precoInfo?.preco_m2) {
-      texto += `\n💰 *Valor Palete Fracionado*\n`;
-      texto += `• R$ ${formatarNumero(precoInfo.preco_m2)} / m²\n`;
+      texto += `*Valor Fracionado* - R$ ${formatarNumero(precoInfo.preco_m2)} / m²\n`;
 
       if (precoInfo.preco_m2_palete) {
-        texto += `\n📦 *Valor Palete Fechado*\n`;
-        texto += `• R$ ${formatarNumero(precoInfo.preco_m2_palete)} / m²\n`;
+        texto += `*Valor Palete Fechado* - R$ ${formatarNumero(precoInfo.preco_m2_palete)} / m²\n`;
       }
     }
 
