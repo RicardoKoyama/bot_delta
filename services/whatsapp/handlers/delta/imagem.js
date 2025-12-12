@@ -1,9 +1,10 @@
-// imagem.js — handler do projeto DELTA usando decoder universal
-
-const fs = require("fs");
+// imagem.js — handler DELTA com reaproveitamento total do texto.js
 const { decodeImage } = require("./decoder");
 const textoHandler = require("./texto");
 
+// ============================================================
+// Handler principal de imagem
+// ============================================================
 module.exports = async function imagemHandler(client, msg, usuario) {
   try {
     const media = await msg.downloadMedia();
@@ -11,46 +12,52 @@ module.exports = async function imagemHandler(client, msg, usuario) {
       return msg.reply("❌ Não consegui baixar a imagem.");
     }
 
-    //msg.reply("🔎 Lendo código da imagem...");
-
     const result = await decodeImage(media);
 
     console.log("📡 Resultado da decodificação:", result);
 
-    // =============================
-    // A) QR DELTA (URL com id=XXXX)
-    // =============================
-    if (result.type === "QR_DELTA") {
+    // ========================================================
+    // A) QR CODE DA DELTA (URL com id=XXXX)
+    // ========================================================
+    if (result.type === "QR_DELTA" && result.raw) {
+      // Delegamos diretamente para o texto.js
+      // Ele já sabe buscar produto + preço
       return textoHandler(client, msg, result.raw, usuario);
     }
 
-    // =============================
-    // B) EAN / GTIN / DATA MATRIX
-    // =============================
-    const gtin = result.gtin;
-    const lote = result.lote || null;
+    // ========================================================
+    // B) GTIN / EAN / GS1 (com ou sem lote)
+    // ========================================================
+    if (result.gtin) {
 
-    if (gtin) {
-      let complemento = "";
-      if (lote) complemento = `\n🔹 *Lote lido:* ${lote}`;
+      let aviso = `📦 *Código detectado:* ${result.gtin}`;
+      if (result.lote) {
+        aviso += `\n🔹 *Lote:* ${result.lote}`;
+      }
 
-      await msg.reply(`📦 *GTIN detectado:* ${gtin}${complemento}`);
+      // Apenas informativo
+      await msg.reply(aviso);
 
-      // consulta DELTA via GTIN
-      return textoHandler(client, msg, gtin, usuario);
+      // Encaminha GTIN para o texto.js
+      // (texto.js resolve produto, preço, etc.)
+      return textoHandler(client, msg, result.gtin, usuario);
     }
 
-    // =============================
+    // ========================================================
     // C) Digital Link sem GTIN válido
-    // =============================
+    // ========================================================
     if (result.type === "DIGITAL_LINK") {
-      return msg.reply("❗ Digital Link reconhecido, mas sem GTIN válido.");
+      return msg.reply(
+        "❗ Código reconhecido como Digital Link, mas não foi possível identificar um GTIN válido."
+      );
     }
 
-    // =============================
-    // D) Nada reconhecido
-    // =============================
-    return msg.reply("❌ Não consegui identificar nenhum código válido na imagem.");
+    // ========================================================
+    // D) Nenhum código reconhecido
+    // ========================================================
+    return msg.reply(
+      "❌ Não consegui identificar nenhum código válido na imagem."
+    );
 
   } catch (err) {
     console.error("❌ Erro no handler de imagem:", err);
