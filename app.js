@@ -42,6 +42,7 @@ const contasRoutes = require('./routes/contas');
 const produtosRoutes = require('./routes/produtos');
 const logsRoutes = require('./routes/logs');
 const cadastroSiteRoutes = require("./routes/cadastroSite");
+const cadastroSiteRepresentanteRoutes = require("./routes/cadastroSiteRepresentante");
 
 app.use("/", cadastroSiteRoutes);
 
@@ -50,6 +51,8 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/contas', contasRoutes);
 app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
+app.use('/', cadastroSiteRepresentanteRoutes);
+
 
 whatsappManager.iniciarTodas();
 

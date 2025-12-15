@@ -36,9 +36,6 @@ router.post("/cadastro-site", async (req, res) => {
       admin: 0
     });
 
-    // ⛔ NÃO enviar boas-vindas aqui.
-    // ❗ Enviar SOMENTE a mensagem de validação
-
     const msgValidacao = usuarioService.gerarMensagemValidacao(novo.numero);
 
     await whatsappManager.enviarMensagem(novo.numero, msgValidacao);
