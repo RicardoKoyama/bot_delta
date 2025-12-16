@@ -1,30 +1,19 @@
-// routes/cadastroSiteRepresentante.js
-// Cadastro de clientes via representante (SaaS)
-// - Cria CLIENTE
-// - Cria USUÁRIOS via usuariosService (LID-safe)
-// - Dispara mensagem de validação (mesmo fluxo do teste-grátis)
-
 const express = require('express');
 const router = express.Router();
 
-const db = require('../db/db'); // ajuste o path se necessário
+const db = require('../db/db');
 const { cadastrarUsuario } = require('../services/usuariosService');
+const whatsappManager = require('../services/whatsapp/WhatsAppManager');
 
-// ================================
-// Configuração
-// ================================
 const PLANOS = {
   BASICO: { limite: 2 },
   PRO: { limite: 5 }
 };
 
-const TOKEN_MASTER = process.env.DELTA_TOKEN_MASTER; // obrigatório
-const TABELA_PRECO_PADRAO_ID = 1; // ajuste se necessário
+const TOKEN_MASTER = process.env.DELTA_TOKEN_MASTER;
+const TABELA_PRECO_PADRAO_ID = 1;
 const DIAS_TESTE = 15;
 
-// ================================
-// Helpers
-// ================================
 function normalizarTelefone(t) {
   return (t || '').replace(/\D/g, '');
 }
@@ -41,22 +30,20 @@ function hojeMaisDias(dias) {
 
 function sqlGet(sql, params = []) {
   return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row || null)));
+    db.get(sql, params, (err, row) =>
+      err ? reject(err) : resolve(row || null)
+    );
   });
 }
 
 function sqlRun(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
+      err ? reject(err) : resolve(this);
     });
   });
 }
 
-// ================================
-// Rota
-// ================================
 router.post('/cadastro-representante/:slug', async (req, res) => {
   try {
     const slug = normalizarSlug(req.params.slug);
@@ -64,15 +51,12 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
     const {
       nome_loja,
       nome,
-      telefone,   // telefone principal (responsável)
+      telefone,
       email,
       plano,
-      telefones   // lista separada por vírgula
+      telefones
     } = req.body;
 
-    // ----------------------------
-    // Validações
-    // ----------------------------
     if (!nome_loja || !nome || !telefone || !plano || !telefones) {
       return res.status(400).json({ erro: 'Campos obrigatórios ausentes.' });
     }
@@ -85,9 +69,6 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
       return res.status(500).json({ erro: 'Token master não configurado.' });
     }
 
-    // ----------------------------
-    // Resolver representante (slug = nome)
-    // ----------------------------
     const representante = await sqlGet(
       `
       SELECT id, nome
@@ -103,9 +84,6 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
       return res.status(404).json({ erro: 'Representante não encontrado.' });
     }
 
-    // ----------------------------
-    // Preparar telefones
-    // ----------------------------
     const listaTelefones = telefones
       .split(',')
       .map(t => normalizarTelefone(t))
@@ -121,9 +99,6 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
       });
     }
 
-    // ----------------------------
-    // Criar CLIENTE
-    // ----------------------------
     const validadeTeste = hojeMaisDias(DIAS_TESTE);
 
     const insCliente = await sqlRun(
@@ -153,10 +128,6 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
 
     const clienteId = insCliente.lastID;
 
-    // ----------------------------
-    // Criar USUÁRIOS via usuariosService
-    // (mantém fluxo de validação + LID)
-    // ----------------------------
     const mensagensValidacao = [];
 
     for (const tel of listaTelefones) {
@@ -168,10 +139,9 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
         dias: DIAS_TESTE,
         ativo: 1,
         admin: 0,
-        cliente_id: clienteId // importante: vincula ao cliente
+        cliente_id: clienteId
       });
 
-      // O service já prepara a mensagem de validação
       if (ret?.mensagemValidacao) {
         mensagensValidacao.push({
           telefone: tel,
@@ -180,15 +150,13 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
       }
     }
 
-    // ----------------------------
-    // Resposta
-    // O envio das mensagens fica com o fluxo existente
-    // (router/manager de WhatsApp do bot)
-    // ----------------------------
+    for (const m of mensagensValidacao) {
+      await whatsappManager.enviarMensagem(m.telefone, m.mensagem);
+    }
+
     return res.json({
       sucesso: true,
-      cliente_id: clienteId,
-      mensagensValidacao
+      cliente_id: clienteId
     });
 
   } catch (err) {

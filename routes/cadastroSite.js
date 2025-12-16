@@ -25,7 +25,6 @@ router.post("/cadastro-site", async (req, res) => {
       return res.status(400).json({ erro: "API inválida ou inativa." });
     }
 
-    // Cadastro do usuário no banco
     const novo = await usuarioService.cadastrarUsuario({
       nome,
       telefone,
