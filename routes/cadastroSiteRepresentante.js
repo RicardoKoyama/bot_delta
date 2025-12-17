@@ -15,7 +15,9 @@ const TABELA_PRECO_PADRAO_ID = 1;
 const DIAS_TESTE = 15;
 
 function normalizarTelefone(t) {
-  return (t || '').replace(/\D/g, '');
+    t = (t || "").replace(/\D/g, "");
+  if (!t.startsWith("55")) tel = "55" + tel;
+  return t;
 }
 
 function normalizarSlug(s) {
