@@ -1,14 +1,11 @@
-// services/usuariosService.js
 const db = require("../db/db");
 
-// --- Normalizar telefone no formato 55DDDNÚMERO ---
 function normalizarTelefone(tel) {
   tel = (tel || "").replace(/\D/g, "");
   if (!tel.startsWith("55")) tel = "55" + tel;
   return tel;
 }
 
-// --- Capitalizar nome ---
 function formatarNome(nome) {
   return (nome || "")
     .toLowerCase()
@@ -17,11 +14,6 @@ function formatarNome(nome) {
     .join(" ");
 }
 
-/**
- * NOVO: Mensagem inicial de validação
- * Essa é a primeira mensagem que o usuário recebe.
- * Ele deve responder a essa mensagem para validarmos o LID.
- */
 function gerarMensagemValidacao(numeroReal) {
   return `
 Olá! 👋  
@@ -35,21 +27,15 @@ Ao responder, seu número será validado automaticamente e você poderá começa
 `;
 }
 
-/**
- * Mensagem tradicional de boas-vindas
- * Essa mensagem só será enviada após o número ser validado.
- */
 async function gerarMensagemBoasVindas(nome, api) {
   const nomeFmt = formatarNome(nome);
 
-  // Buscar dados da API
   const infoApi = await new Promise((resolve, reject) => {
     db.get("SELECT * FROM apis WHERE UPPER(nome) = UPPER(?)", [api], (err, row) =>
       err ? reject(err) : resolve(row)
     );
   });
 
-  // Lista de comandos formatada
   let comandosLista = "";
 
   if (infoApi?.comandos) {
@@ -72,36 +58,26 @@ ${comandosLista}
 🕒 *Período de teste:* 15 dias  
 Durante esse período, você poderá explorar nossas automações, consultas inteligentes e integrações avançadas.
 
-➡️ É só enviar a palavra *ajuda* que você verá os comandos disponíveis para consulta.
+➡️ Para dúvidas ou suporte, chame pelo nosso WhatsApp: +55 14 99665-5659
 `;
 }
 
-/**
- * Cadastrar usuário vindo da Landing Page
- * OBS: Agora NÃO envia mais boas-vindas aqui.
- * O fluxo correto:
- *   1. Cadastrar usuário
- *   2. Retornar mensagem de validação
- *   3. Após validação via WhatsApp, o router envia mensagem de boas-vindas
- */
-function cadastrarUsuario({ nome, telefone, email, api, dias = 15, ativo = 1, admin = 0 }) {
+function cadastrarUsuario({ nome, telefone, email, api, dias = 15, ativo = 1, admin = 0, cliente_id = null }) {
   return new Promise((resolve, reject) => {
     const numero = normalizarTelefone(telefone);
     const nomeFmt = formatarNome(nome);
 
-    // validade = data de hoje + dias
     const validade = new Date(Date.now() + dias * 86400000)
       .toISOString()
       .substring(0, 10);
 
     db.run(
-      `INSERT INTO usuarios (nome, telefone, email, api, validade, ativo, administrador)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [nomeFmt, numero, email, api, validade, ativo, admin],
+      `INSERT INTO usuarios (nome, telefone, email, api, validade, ativo, administrador, cliente_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nomeFmt, numero, email, api, validade, ativo, admin, cliente_id],
       async (err) => {
         if (err) return reject(err);
 
-        // Retornamos o novo usuário e a mensagem de validação
         resolve({
           nome: nomeFmt,
           numero,
