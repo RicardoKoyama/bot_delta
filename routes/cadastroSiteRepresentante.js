@@ -16,7 +16,7 @@ const DIAS_TESTE = 15;
 
 function normalizarTelefone(t) {
     t = (t || "").replace(/\D/g, "");
-  if (!t.startsWith("55")) tel = "55" + tel;
+  if (!t.startsWith("55")) t = "55" + t;
   return t;
 }
 
