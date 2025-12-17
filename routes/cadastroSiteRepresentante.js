@@ -151,7 +151,11 @@ router.post('/cadastro-representante/:slug', async (req, res) => {
     }
 
     for (const m of mensagensValidacao) {
-      await whatsappManager.enviarMensagem(m.telefone, m.mensagem);
+      const numeroWhatsApp = m.telefone.endsWith('@c.us')
+        ? m.telefone
+        : `${m.telefone}@c.us`;
+
+      await whatsappManager.enviarMensagem(numeroWhatsApp, m.mensagem);
     }
 
     return res.json({
