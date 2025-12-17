@@ -1,4 +1,3 @@
-// texto.js — consulta DELTA e monta mensagem com preço (m² / palete)
 const db = require('../../../../db/db');
 const deltaApi = require('../../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
@@ -7,7 +6,6 @@ const { registrarLog } = require("../../../logService");
 async function resolverTelefone(msg) {
   const rawId = (msg.from || '').split('@')[0].trim();
 
-  // tenta resolver via whatsapp_lid_map
   const row = await sqlGet(
     'SELECT telefone FROM whatsapp_lid_map WHERE lid = ? LIMIT 1',
     [rawId]
@@ -15,14 +13,9 @@ async function resolverTelefone(msg) {
 
   if (row?.telefone) return row.telefone;
 
-  // fallback: dígitos
   return rawId.replace(/\D/g, "");
 }
 
-
-// ============================================================
-// Helpers SQLite
-// ============================================================
 function sqlGet(sql, params = []) {
   return new Promise(resolve => {
     db.get(sql, params, (err, row) => resolve(row || null));
@@ -35,9 +28,6 @@ function sqlAll(sql, params = []) {
   });
 }
 
-// ============================================================
-// Formatação
-// ============================================================
 function formatarNumero(valor) {
   if (valor === undefined || valor === null) return null;
   const n = Number(valor);
@@ -48,13 +38,9 @@ function formatarNumero(valor) {
   });
 }
 
-// ============================================================
-// Buscar preço do produto para o usuário
-// ============================================================
 async function buscarPrecoProduto(telefone, codigoProduto) {
   if (!telefone) return null;
 
-  // Resolve cliente do usuário
   const user = await sqlGet(
     "SELECT cliente_id FROM usuarios WHERE telefone = ? LIMIT 1",
     [telefone]
@@ -62,7 +48,6 @@ async function buscarPrecoProduto(telefone, codigoProduto) {
 
   if (!user?.cliente_id) return null;
 
-  // Resolve tabela de preço do cliente
   const tabela = await sqlGet(
     `
     SELECT tp.id, tp.codigo
@@ -76,7 +61,6 @@ async function buscarPrecoProduto(telefone, codigoProduto) {
 
   if (!tabela) return null;
 
-  // Busca preço do produto
   const preco = await sqlGet(
     `
     SELECT preco_m2, preco_m2_palete
@@ -97,9 +81,6 @@ async function buscarPrecoProduto(telefone, codigoProduto) {
   };
 }
 
-// ============================================================
-// Handler principal
-// ============================================================
 module.exports = async function textoHandler(client, msg, body, usuario) {
 
   const termo = (body || "").trim().toLowerCase();
@@ -118,12 +99,9 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       `*Superfície:* ${det.dsc_esp_superficie}\n` +
       `*Marca:* ${det.dsc_marca}\n` +
       `*Caixa:* ${det.prd_m2_caixa} m²\n` + 
-      `*Palete:* ${det.prd_m2_pallet} m²\n`;
+      `*Palete:* ${det.prd_m2_pallet} m²\n` + 
+      `*Estoque:* ${det.sdo_saldo_estoque} m²\n\n`;
       
-
-    // ----------------------------
-    // Bloco de preço
-    // ----------------------------
     if (precoInfo?.preco_m2) {
       texto += `*Valor Fracionado* - R$ ${formatarNumero(precoInfo.preco_m2)} / m²\n`;
 
@@ -137,15 +115,10 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     return texto;
   }
 
-  // -------------------------------------------------------------------------
-  // Responder produto
-  // -------------------------------------------------------------------------
   async function responderProduto(row) {
-    console.log("New Texto.js");
     try {
       const det = await deltaApi.detalhes(row.codigo);
 
-      // Busca preço (opcional)
       const precoInfo = await buscarPrecoProduto(telefone, row.codigo);
 
       const texto = await montarMensagem(det, precoInfo);
@@ -177,9 +150,6 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // BUSCA POR URL (QR DELTA)
-  // -------------------------------------------------------------------------
   async function buscarPorURL(url) {
     const idMatch = url.match(/id=(\d+)/i);
     if (!idMatch) return null;
@@ -192,9 +162,6 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     );
   }
 
-  // -------------------------------------------------------------------------
-  // FLUXOS DE BUSCA
-  // -------------------------------------------------------------------------
   if (termo.startsWith("http")) {
     const row = await buscarPorURL(termo);
     if (row) return responderProduto(row);
@@ -243,7 +210,6 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     return msg.reply(texto);
   }
 
-  // Nome
   const lista = await sqlAll(
     "SELECT codigo, nome FROM produtos WHERE nome LIKE ? LIMIT 10",
     [`%${termo}%`]
