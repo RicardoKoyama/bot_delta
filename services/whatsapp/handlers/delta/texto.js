@@ -99,7 +99,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
   if (!usuarioAtivo) {
     return msg.reply(
-      "⚠️ Seu acesso está inativo. Entre em contato com a administração."
+      "⚠️ Seu acesso está inativo. Por favor, entre em contato com nosso suporte 14 99665-5659"
     );
   }
 
