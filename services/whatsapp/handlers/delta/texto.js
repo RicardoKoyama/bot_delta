@@ -86,6 +86,22 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
   const termo = (body || "").trim().toLowerCase();
   const telefone = await resolverTelefone(msg);
 
+  const usuarioAtivo = await sqlGet(
+    `
+    SELECT id
+    FROM usuarios
+    WHERE telefone = ?
+      AND ativo = 1
+    LIMIT 1
+    `,
+    [telefone]
+  );
+
+  if (!usuarioAtivo) {
+    return msg.reply(
+      "⚠️ Seu acesso está inativo. Entre em contato com a administração."
+    );
+  }
 
   // -------------------------------------------------------------------------
   // Monta mensagem
