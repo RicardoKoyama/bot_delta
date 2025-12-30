@@ -7,6 +7,7 @@ const whatsappManager = require('./services/whatsapp/WhatsAppManager');
 const cron = require("node-cron");
 const { sincronizarLista, sincronizarDetalhes } = require("./services/deltaSync");
 const { registrarLog } = require("./services/logService");
+const sacRoutes = require('./routes/sac');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/produtos', produtosRoutes);
 app.use('/logs', logsRoutes);
 app.use('/', cadastroSiteRepresentanteRoutes);
 
+app.use('/sac', sacRoutes);
 
 whatsappManager.iniciarTodas();
 

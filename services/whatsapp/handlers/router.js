@@ -1,6 +1,8 @@
 // services/whatsapp/handlers/router.js
 const deltaMain = require('./delta/main');
 const msiMain   = require('./msi/main');
+const sacMain = require('./sac/main');
+
 
 // Usa o SQLite do bot (db/bot.db)
 const db = require('../../../db/db');
@@ -170,15 +172,24 @@ async function tryHandleValidationReply(message) {
 async function handleTexto(message, accountId, client) {
   const api = await getUserAPI(message.from);
 
+  // 1️⃣ Se NÃO tem API conhecida
   if (!api) {
+
+    // tentativa de validação (fluxo atual – mantém)
     const handled = await tryHandleValidationReply(message);
     if (handled) return;
 
+    // 2️⃣ tenta SAC (NOVO)
+    const sacHandled = await sacMain.handleTexto(message, accountId, client);
+    if (sacHandled) return;
+
+    // 3️⃣ fallback antigo (inalterado)
     return message.reply(
       '❗ Seu número não tem permissão para usar o BOT.\n' +
       'Se você acabou de solicitar acesso, responda à mensagem de validação enviada pelo BOT.'
     );
   }
+
 
   switch (api) {
     case 'DELTA':
