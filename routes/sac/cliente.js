@@ -10,7 +10,7 @@ const upload = multer({
 });
 
 /**
- * GET /sac/chamado/:token
+ *** GET /sac/chamado/:token
  * Retorna dados do chamado para o portal do cliente
  */
 router.get('/chamado/:token', async (req, res) => {

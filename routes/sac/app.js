@@ -3,7 +3,7 @@ const router = express.Router();
 const { pool } = require('../../services/dbService');
 
 /**
- * GET /sac/app/chamados
+ *** GET /sac/app/chamados
  * Lista chamados disponíveis para atendimento
  */
 router.get('/app/chamados', async (req, res) => {

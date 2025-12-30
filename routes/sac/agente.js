@@ -3,7 +3,7 @@ const router = express.Router();
 const { pool } = require('../../services/dbService');
 
 /**
- * GET /sac/agente/chamados
+ *** GET /sac/agente/chamados
  */
 router.get('/agente/chamados', async (req, res) => {
   const { rows } = await pool.query(`
