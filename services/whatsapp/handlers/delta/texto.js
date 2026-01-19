@@ -162,7 +162,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
           await client.sendMessage(
             msg.from,
             media,
-            { caption: texto }
+            { caption: texto, sendSeen: false }
           );
 
           enviouImagem = true;
