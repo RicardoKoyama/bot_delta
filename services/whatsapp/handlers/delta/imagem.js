@@ -2,6 +2,9 @@
 const { decodeImage } = require("./decoder");
 const textoHandler = require("./texto");
 
+async function responder(client, msg, texto) {
+  return client.sendMessage(msg.from, texto, { sendSeen: false });
+}
 // ============================================================
 // Handler principal de imagem
 // ============================================================
@@ -9,7 +12,7 @@ module.exports = async function imagemHandler(client, msg, usuario) {
   try {
     const media = await msg.downloadMedia();
     if (!media) {
-      return msg.reply("❌ Não consegui baixar a imagem.");
+      return responder(client, msg, "❌ Não consegui baixar a imagem.");
     }
 
     const result = await decodeImage(media);
@@ -47,7 +50,7 @@ module.exports = async function imagemHandler(client, msg, usuario) {
     // C) Digital Link sem GTIN válido
     // ========================================================
     if (result.type === "DIGITAL_LINK") {
-      return msg.reply(
+      return responder(client, msg, 
         "❗ Código reconhecido como Digital Link, mas não foi possível identificar um GTIN válido."
       );
     }
@@ -55,12 +58,12 @@ module.exports = async function imagemHandler(client, msg, usuario) {
     // ========================================================
     // D) Nenhum código reconhecido
     // ========================================================
-    return msg.reply(
+    return responder(client, msg, 
       "❌ Não consegui identificar nenhum código válido na imagem."
     );
 
   } catch (err) {
     console.error("❌ Erro no handler de imagem:", err);
-    return msg.reply("❌ Erro ao processar a imagem.");
+    return responder(client, msg, "❌ Erro ao processar a imagem.");
   }
 };

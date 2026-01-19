@@ -3,6 +3,14 @@ const deltaApi = require('../../../deltaApi');
 const { MessageMedia } = require('whatsapp-web.js');
 const { registrarLog } = require("../../../logService");
 
+async function responder(client, msg, texto) {
+  return client.sendMessage(
+    msg.from,
+    texto,
+    { sendSeen: false }
+  );
+}
+
 async function resolverTelefone(msg) {
   const rawId = (msg.from || '').split('@')[0].trim();
 
@@ -98,7 +106,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
   );
 
   if (!usuarioAtivo) {
-    return msg.reply(
+    return responder(client, msg,
       "⚠️ Seu acesso está inativo. Por favor, entre em contato com nosso suporte 14 99665-5659"
     );
   }
@@ -170,7 +178,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
     } catch (e) {
       console.error("❌ Erro API Delta:", e);
-      await msg.reply("❌ Erro ao consultar produto.");
+      await responder(client, msg,"❌ Erro ao consultar produto.");
     }
   }
 
@@ -189,7 +197,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
   if (termo.startsWith("http")) {
     const row = await buscarPorURL(termo);
     if (row) return responderProduto(row);
-    return msg.reply("❌ Produto não encontrado.");
+    return responder(client, msg,"❌ Produto não encontrado.");
   }
 
   if (/^\d{13}$/.test(termo)) {
@@ -198,7 +206,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       [termo]
     );
     if (row) return responderProduto(row);
-    return msg.reply("❌ Produto não encontrado.");
+    return responder(client, msg, "❌ Produto não encontrado.");
   }
 
   if (/^\d{3,5}-[a-z]$/i.test(termo)) {
@@ -207,7 +215,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       [termo.toUpperCase()]
     );
     if (row) return responderProduto(row);
-    return msg.reply("❌ Produto não encontrado.");
+    return responder(client, msg, "❌ Produto não encontrado.");
   }
 
   if (/^\d{3,5}$/.test(termo)) {
@@ -216,7 +224,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       [`${termo}%`]
     );
 
-    if (!lista.length) return msg.reply("❌ Produto não encontrado.");
+    if (!lista.length) return responder(client, msg, "❌ Produto não encontrado.");
 
     if (lista.length === 1) {
       const row = await sqlGet(
@@ -231,7 +239,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
       texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`;
     });
 
-    return msg.reply(texto);
+    return responder(client, msg, texto);
   }
 
   const lista = await sqlAll(
@@ -239,7 +247,7 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     [`%${termo}%`]
   );
 
-  if (!lista.length) return msg.reply("❌ Produto não encontrado.");
+  if (!lista.length) return responder(client, msg, "❌ Produto não encontrado.");
 
   if (lista.length === 1) {
     const row = await sqlGet(
@@ -254,5 +262,5 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
     texto += `${i + 1}. *${p.codigo}* — ${p.nome}\n`;
   });
 
-  return msg.reply(texto);
+  return responder(client, msg, texto);
 };

@@ -2,6 +2,10 @@ const textoHandler  = require('./texto');
 const imagemHandler = require('./imagem');
 const ajudaHandler  = require('./ajuda');
 
+async function responder(client, msg, texto) {
+  return client.sendMessage(msg.from, texto, { sendSeen: false });
+}
+
 async function handleTexto(message, accountId, client) {
   try {
     const body = (message.body || '').trim().toUpperCase();
@@ -14,7 +18,7 @@ async function handleTexto(message, accountId, client) {
 
   } catch (err) {
     console.error('[DELTA main] erro em handleTexto:', err);
-    return message.reply('❌ Erro ao processar mensagem (DELTA).');
+    return responder(client, msg,'❌ Erro ao processar mensagem (DELTA).');
   }
 }
 
@@ -23,7 +27,7 @@ async function handleImagem(message, accountId, client) {
     return imagemHandler(client, message, {}); 
   } catch (err) {
     console.error('[DELTA main] erro em handleImagem:', err);
-    return message.reply('❌ Erro ao processar imagem (DELTA).');
+    return responder(client, msg,'❌ Erro ao processar imagem (DELTA).');
   }
 }
 

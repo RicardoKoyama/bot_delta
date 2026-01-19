@@ -1,6 +1,10 @@
 // ajuda.js — responde com os comandos da API habilitada
 const db = require('../../../../db/db');
 
+async function responder(client, msg, texto) {
+  return client.sendMessage(msg.from, texto, { sendSeen: false });
+}
+
 function sqlGet(sql, params) {
     return new Promise(resolve => {
         db.get(sql, params, (err, row) => resolve(row || null));
@@ -18,14 +22,14 @@ module.exports = async function ajudaHandler(client, msg, usuario) {
         );
 
         if (!row) {
-            return msg.reply("❌ Não encontrei comandos para esta API.");
+            return responder(client, msg, "❌ Não encontrei comandos para esta API.");
         }
 
         let comandos;
         try {
             comandos = JSON.parse(row.comandos);
         } catch (e) {
-            return msg.reply("❌ Erro ao interpretar comandos da API.");
+            return responder(client, msg, "❌ Erro ao interpretar comandos da API.");
         }
 
         let texto = `📘 *COMANDOS DISPONÍVEIS*\n\n`;
@@ -33,10 +37,10 @@ module.exports = async function ajudaHandler(client, msg, usuario) {
             texto += `${i + 1}. ${c}\n`;
         });
 
-        return msg.reply(texto);
+        return responder(client, msg, texto);
 
     } catch (err) {
         console.error("Erro no AJUDA:", err);
-        return msg.reply("❌ Erro ao carregar comandos.");
+        return responder(client, msg, "❌ Erro ao carregar comandos.");
     }
 };
