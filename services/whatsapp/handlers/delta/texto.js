@@ -147,10 +147,18 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
           );
           await client.sendMessage(msg.from, media, { caption: texto });
         } else {
-          await msg.reply(texto);
+          await client.sendMessage(
+            msg.from,
+            texto,
+            { sendSeen: false }
+          );
         }
       } catch {
-        await msg.reply(texto);
+          await client.sendMessage(
+            msg.from,
+            texto,
+            { sendSeen: false }
+          );
       }
 
       registrarLog({

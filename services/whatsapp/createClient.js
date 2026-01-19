@@ -17,6 +17,7 @@ async function createClient(conta) {
         '--disable-dev-shm-usage'
       ]
     },
+    disableSeen: true,
     authStrategy: new LocalAuth({
       clientId: `conta_${conta.id}`,
       dataPath: sessionDir
