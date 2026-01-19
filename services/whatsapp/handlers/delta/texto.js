@@ -147,26 +147,37 @@ module.exports = async function textoHandler(client, msg, body, usuario) {
 
       const texto = await montarMensagem(det, precoInfo);
 
-      try {
-        if (det.prd_link_img_produto) {
+      let enviouImagem = false;
+
+      if (det.prd_link_img_produto && det.prd_link_img_produto.startsWith('http')) {
+        try {
           const media = await MessageMedia.fromUrl(
             det.prd_link_img_produto,
-            { unsafeMime: true }
+            {
+              unsafeMime: true,
+              timeout: 15000
+            }
           );
-          await client.sendMessage(msg.from, media, { caption: texto });
-        } else {
+
           await client.sendMessage(
             msg.from,
-            texto,
-            { sendSeen: false }
+            media,
+            { caption: texto }
+          );
+
+          enviouImagem = true;
+        } catch (err) {
+          console.warn(
+            '⚠️ Falha ao enviar imagem do produto:',
+            det.prd_link_img_produto,
+            err.message
           );
         }
-      } catch {
-          await client.sendMessage(
-            msg.from,
-            texto,
-            { sendSeen: false }
-          );
+      }
+
+      if (!enviouImagem) {
+        await responder(client, msg, texto
+        );
       }
 
       registrarLog({
